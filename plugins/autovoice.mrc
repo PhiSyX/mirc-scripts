@@ -176,7 +176,7 @@ alias Autovoice::oninput {
 
   ; ------------------------ ;
 
-  if (!$is_chan(%chan)) {
+  if (!$ischan(%chan)) {
     return $false
   }
 
@@ -213,7 +213,7 @@ alias Autovoice::ontext {
 
   ; -------------------------------------- ;
 
-  if (!$is_chan(%chan)) {
+  if (!$ischan(%chan)) {
     return $false
   }
 

@@ -79,7 +79,7 @@ alias nick.color {
 
   var %config = $nick.color._configDefault
 
-  if (!%chan || $left(%chan, 1) !== $chr(35)) {
+  if (!%chan || !$ischan(%chan)) {
     echo $color(info2) -a -
     echo $color(info2) -at ERREUR: L'alias `$nick.color` prend 2 paramètres.
     echo $color(notice) -at Info: Paramètre `nick` obligatoire

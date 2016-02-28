@@ -151,7 +151,7 @@ alias Detections {
     %text = $null
   }
   elseif ($2 === NOTICE) {
-    %chan = $iif($is_chan(%chan), %chan, $comchan(%nick, 1))
+    %chan = $iif($ischan(%chan), %chan, $comchan(%nick, 1))
   }
   elseif ($2 === PRIVMSG) {
     %event = TEXT

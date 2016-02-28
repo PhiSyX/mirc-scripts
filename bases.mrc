@@ -75,3 +75,10 @@ alias call.alias {
     echo $color(info2) -t $debug $!call.alias: L'alias $qt($$1) n'existe pas ou est privé (alias -l).
   }
 }
+
+/**
+* Modification de l'alias `$is_chan` du script Skyrock.fm !
+*
+* Sur certains IRCd le chantype peut être modifié, ou avoir plusieurs chantypes. ($chantypes)
+*/
+alias ischan return $iif($left($$1,1) isin $chantypes,$true,$false)

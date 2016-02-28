@@ -3,7 +3,7 @@
 *
 * Ce script a été spécialement conçu pour être utilisé avec le script "Skyrock.fm v10".
 * Pourquoi? Il contient des variables/identifieurs/alias provenant de ce script.
-* Lesquel(le)s: $isin_chanlist, $is_chanoff, $is_hq.
+* Lesquel(le)s: $is_chanoff, $is_hq, $isin_chanlist.
 *
 * @author Mike 'PhiSyX' S.
 * @require
@@ -106,7 +106,7 @@ alias -l whois.channel.config {
 alias -l whois.channel.get {
   var %chan = $1
 
-  ; ----- ;
+  ; ---------- ;
 
   var %config = $whois.channel.config
   var %usermodes = $prefix
@@ -118,8 +118,8 @@ alias -l whois.channel.get {
   %usermodes = $replace(%usermodes, $chr(37), $+($chr(92), $chr(37), $chr(124)))
   %usermodes = $replace(%usermodes, $chr(43), $+($chr(92), $chr(43)))
 
-  var %pattern = $+($chr(40), $chr(40), %usermodes, $chr(41), $chr(43), $chr(41), $chr(35))
-  %usermodes = $iif($regex(usermodes, %chan, / $+ %pattern $+ /), $regml(usermodes, 1), $null)
+  var %pattern = $+($chr(40), ?:, %usermodes, $chr(41), $chr(43))
+  %usermodes = $iif($regex(usermodes, %chan, /( $+ %pattern $+ )/), $regml(usermodes, 1), $null)
 
   if ($prop === favorites) {
     return $Configure::read(%config, favorites)
