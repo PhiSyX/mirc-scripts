@@ -12,12 +12,9 @@
 * @author Mike 'PhiSyX' S.
 * @require
 *   - scripts/users/phisyx/bases.mrc
-*     - $call.alias
 *   - scripts/users/phisyx/configure.mrc
-*     - $Configure::assign, $Configure::read
 *   - scripts/users/phisyx/nick.mrc
-*     - $nick.color, $is_operator_off
-* @version 1.1.8
+* @version 1.1.9
 */
 
 /**
@@ -28,7 +25,7 @@
 alias -l EventFormat._configDefault {
   var %event = $event
   var %format = [prefix_sign] [event][suffix_sign] [nick] ([address])
-  var %switches = -t
+  var %switches = $null
 
   if (%event === rawmode) {
     %event = mode
@@ -39,7 +36,7 @@ alias -l EventFormat._configDefault {
   }
   elseif (%event === text) {
     %format = <[nick]> [message]
-    %switches = -mt
+    %switches = -m
   }
 
   return $Configure::assign(color, $iif($color(%event), $v1, 11)) $+ $&
@@ -58,11 +55,11 @@ alias -l EventFormat._configDefault {
 alias EventFormat {
   haltdef
 
-  ; ----- ;
+  ; ----------------- ;
 
   var %config_name = $1
 
-  ; ----- ;
+  ; ----------------- ;
 
   ; Configuration de l'événement.  
   var %config = $iif(%config_name, $call.alias($v1), $call.alias(EventFormat.config::on $+ $event)) $result
@@ -80,7 +77,7 @@ alias EventFormat {
       echo %color %switches %chan $EventFormat._change(%nick, %chan, %config)
     }
 
-    echo %color $remove(%switches, e, s) # $EventFormat._change(%nick, %chan, %config)
+    echo %color $remove(%switches, e, s, t) # $EventFormat._change(%nick, %chan, %config)
   }
   ; event has many chans
   else {
@@ -92,7 +89,7 @@ alias EventFormat {
     var %i = 1
     while (%i <= %chans_total) {
       %chan = $comchan(%nick, %i)
-      echo %color $remove(%switches, e, s) %chan $EventFormat._change(%nick, %chan, %config)
+      echo %color $remove(%switches, e, s, t) %chan $EventFormat._change(%nick, %chan, %config)
       inc %i
     }
   }
@@ -121,12 +118,17 @@ alias -l EventFormat._change {
   var %chan = $$2
   var %config = $$3
 
-  ; ----- ;
+  ; ------------- ;
 
   var %output = $Configure::read(%config, format)
   %output = $replace(%output, [address], $EventFormat.info().address)
   %output = $replace(%output, [event], $EventFormat.info().event)
-  %output = $replace(%output, [message], $EventFormat.info().message)
+  if ($Configure::read(%config, detection)) {
+    %output = $replace(%output, [message], $EventFormat.info().message&detection)
+  }
+  else {
+    %output = $replace(%output, [message], $EventFormat.info().message)
+  }
   %output = $replace(%output, [nick], $EventFormat.info(%nick, %chan).nick)
   %output = $replace(%output, [newnick], $EventFormat.info(%nick, %chan).newnick)
   %output = $replace(%output, [oldnick], $EventFormat.info($nick, %chan).oldnick)
@@ -134,7 +136,14 @@ alias -l EventFormat._change {
   %output = $replace(%output, [mode], $EventFormat.info().mode)
   %output = $replace(%output, [suffix_sign], $Configure::read(%config, suffix_sign))
 
-  return %output
+  var %before_timestamp = $Configure::read(%config, before_timestamp)
+  %before_timestamp = $replace(%before_timestamp, [external], $EventFormat.info(%nick, %chan).external)
+  if ($Configure::read(%config, detection)) {
+    %before_timestamp = [detection] %before_timestamp
+  }
+  %before_timestamp = $replace(%before_timestamp, [detection], $EventFormat.info().detection)
+
+  return %before_timestamp $timestamp %output
 }
 
 /**
@@ -144,7 +153,7 @@ alias EventFormat.info {
   var %nick = $1
   var %chan = $2
 
-  ; ----- ;
+  ; ---------- ;
 
   tokenize 32 $rawmsg
 
@@ -155,8 +164,31 @@ alias EventFormat.info {
     var %event_name = $replace($event, rawmode, mode)
     return $upper($left(%event_name, 1)) $+ $right(%event_name, -1) $+ s
   }
-  elseif ($prop === message) {
+  elseif ($prop === detection) {
+    var %detection = $call.alias(Detections, $1-).result
+    if (%detection) {
+      return 04->
+    }
+    return $null
+  }
+  elseif ($prop === external) {
+    var %external = $null
+
+    if (n !isincs $chan(%chan).mode && !$nick(%chan, %nick)) {
+      %external = 04(External Message $+ $iif($chan(%chan).mode, $+(/ modes:, $v1)) $+ )
+    }
+
+    return %external
+  }
+  elseif ($prop === message || $prop === message&detection) {
     var %message = $right($4-, -1)
+    if ($prop === message&detection) {
+      var %detection = $call.alias(Detections, $1-).result
+      if (%detection) {
+        %message = $replace(%message, %detection, $+(04, %detection, ))
+      }
+    }
+
     if ($event === quit) {
       %message = $right($3-, -1)
     }

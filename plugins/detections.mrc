@@ -21,10 +21,10 @@ alias -l Detections::Badwords.insults {
     ,[#k]j+[e]+\s+t+[e]+\s+p+[i]+s+[e]+ $+ $&
     ,l+[è]+c+h+[e]+\s+(?:[#k]b+[i]+t+[e]+|(?:[k]+u+l+|q+)) $+ $&
     ,[#rkb]m+(?:[a]+[k]+){2},[#k]m+[a]+n+g+[e]+\s+t+(?:[a]+\s+(?:m+[è]+r+[e]+|r+[e]+u+m+)|o+n+\s+(?:p+[è]+r+[e]|r+[e]+u+p+)),[#k]m+[a]+n+g+[e]+(?:\-|\s)m+[e]+r+[2],[#kb]m+[o]+r+t+\s(?:[o]|a+u+(?:x+)?)\s+v+[a]+c+h+[e]+(?:s+)? $+ $&
-    ,[#rkb]n+[é]+g+r+(?:[e]+|[o]+),[#kb]n+[i]+(?:q+u+[e]+|k+)\s+t+(?:[a]+|[o]+n+) $+ $&
-    ,[#rkb]p+d+,[#rkb]p+[é]+d+(?:[a]+l+(?:[e]+)?|[é]+),[#k](?<![a-z])p+u+t+[e]+ $+ $&
+    ,[#rkb]n+[é]+g+r+(?:[e]+|[o]+),[#kb]n+[i]+(?:q+u+[e]+|k+)\s+(?:t+(?:[a]+|[o]+n+)|l+[e]+s+) $+ $&
+    ,[#rkb](?<![a-z])p+d+,[#rkb]p+[é]+d+(?:[a]+l+(?:[e]+)?|[é]+),[#k](?<![a-z])p+u+t+[e]+ $+ $&
     ,[#k]s+[a]+l+(?:h+)?[o]+(?:u+)?(?:p+[e]+),[#kb]s+[a]+c+\s+[à]+\s+(?:f+[o]+u+t+r+[e]+|m+[e]+r+d+[e]+),[#kb]s+u+c+[e]+\s+m+[a]+,[#kb]s+u+c+[e]+u+(?:r+|s+[e]+)\s+[2] $+ $&
-    ,[#kb]t+[a]+f+[i]+[o]+l+[e]+,[#kb]t+[a]+p+[e]+t+[e]+,[#kb]t+(?:a|[e])+n+t+[o]+u+[zs]+(?:[e]+)? $+ $&
+    ,[#kb]t+[a]+f+[i]+[o]+l+[e]+,[#kb]t+[a]+r+l+[o]+u+(?:s+|z+)(?:[e])?,[#kb]t+[a]+p+[e]+t+[e]+,[#kb]t+(?:a|[e])+n+t+[o]+u+[zs]+(?:[e]+)? $+ $&
     ,[#rkb]y+[o]+u+p+[1]
 
   if ($prop === pattern) {
@@ -44,7 +44,7 @@ alias -l Detections::Badwords.insults.keys {
 * @return string
 */
 alias -l Detections::Badwords.porn {
-  var %pattern = [c]+[a]+m+(?:\s+)?[2](?:\s+)?c+[a]+m+,s+p+(?:[e]+)?r+m+(?:[e]+)?
+  var %pattern = [c]+[a]+m+(?:\s+)?[2](?:\s+)?c+[a]+m+,s+p+(?:[e]+)?r+m+(?:[e]+)?,p+l+[a]+n+\s+q+,(?<![a-z])b+[i]+t+[e],b+r+[a]n+l+[e]
 
   if ($prop === pattern) {
     return $Detection.regex::regexify(%pattern, $Detections::Badwords.porn.keys).comments
@@ -136,7 +136,7 @@ alias Detections {
   var %chan = $3
   var %text = $4-
 
-  ; ------ ;
+  ; ------------------------------------ ;
 
   if (%nick === $server) {
     return $false
@@ -161,31 +161,45 @@ alias Detections {
   var %pattern
   var %tester
 
-  if ($regex(insult, %text, /( $+ $Detections::Badwords.insults $+ )/i)) {
+  ; Sur le %text
+  if ($regex(insult, %text __Pseudo__ $+ %nick, /( $+ $Detections::Badwords.insults $+ )/i)) {
     %pattern = $Detections::Badwords.insults().pattern
     %tester = $Detection.regex::tester(%pattern, $regml(insult,1))
 
-    echo 11 %window [on %event $+ ] Insulte: $timestamp $&
-      < $+ $nick.color(%nick,%chan).custom $+ : $+ %chan $+ :03 $+ %tester $+ > $&
-      $replace(%text, $regml(insult, 1), $+(04, $regml(insult, 1), ))
+    if (!$rawmsg) {
+      echo 11 %window [on %event $+ ] Insulte: $timestamp $&
+        < $+ $nick.color(%nick,%chan).custom $+ : $+ %chan $+ :03 $+ %tester $+ > $&
+        $replace(%text, $regml(insult, 1), $+(04, $regml(insult, 1), ))
+    }
+
+    return $regml(insult, 1)
   }
-  elseif ($regex(porn, %text, /( $+ $Detections::Badwords.porn $+ )/i)) {
+  elseif ($regex(porn, %text __Pseudo__ $+ %nick, /( $+ $Detections::Badwords.porn $+ )/i)) {
     %pattern = $Detections::Badwords.porn().pattern
     %tester = $Detection.regex::tester(%pattern, $regml(porn,1))
 
-    echo 11 %window [on %event $+ ] Pornographie: $timestamp $&
-      < $+ $nick.color(%nick,%chan).custom $+ : $+ %chan $+ :03 $+ %tester $+ > $&
-      $replace(%text, $regml(porn, 1), $+(04, $regml(porn, 1), ))
+    if (!$rawmsg) {
+      echo 11 %window [on %event $+ ] Pornographie: $timestamp $&
+        < $+ $nick.color(%nick,%chan).custom $+ : $+ %chan $+ :03 $+ %tester $+ > $&
+        $replace(%text, $regml(porn, 1), $+(04, $regml(porn, 1), ))
+    }
+
+    return $regml(porn, 1)
   }
-  elseif ($regex(other, %text, /( $+ $Detections::Badwords.other $+ )/i)) {
+  elseif ($regex(other, %text __Pseudo__ $+ %nick, /( $+ $Detections::Badwords.other $+ )/i)) {
     %pattern = $Detections::Badwords.other().pattern
     %tester = $Detection.regex::tester(%pattern, $regml(other,1))
 
-    echo 11 %window [on %event $+ ] Detection: $timestamp $&
-      < $+ $nick.color(%nick,%chan).custom $+ : $+ %chan $+ :03 $+ %tester $+ > $&
-      $replace(%text, $regml(other, 1), $+(04, $regml(other, 1), ))  
+    if (!$rawmsg) {
+      echo 11 %window [on %event $+ ] Detection: $timestamp $&
+        < $+ $nick.color(%nick,%chan).custom $+ : $+ %chan $+ :03 $+ %tester $+ > $&
+        $replace(%text, $regml(other, 1), $+(04, $regml(other, 1), ))  
+    }
+
+    return $regml(other, 1)
   }
 
+  return $false
 }
 
 ; //////////

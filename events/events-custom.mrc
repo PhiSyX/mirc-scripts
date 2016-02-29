@@ -94,7 +94,7 @@ alias EventFormat.config::onrawmode {
 }
 
 ; //////////
-; // QUIT //
+; // TEXT //
 ; //////////
 /**
 * Cet alias n'est pas obligatoire.
@@ -103,9 +103,12 @@ alias EventFormat.config::onrawmode {
 * @var array 44 key=value
 */
 alias EventFormat.config::ontext {
+  var %format = [nick] [suffix_sign] [message]
   if ($is_skynaute($nick)) {
-    return $Configure::assign(format, 04<[nick]04> [message]).last
+    %format = 04<[nick]04> [message]
   }
 
-  return $Configure::assign(format, [nick] [suffix_sign] [message]).last
+  return $Configure::assign(format, %format) $+ $&
+    $Configure::assign(before_timestamp, [external]) $+ $&
+    $Configure::assign(detection, $true).last
 }
