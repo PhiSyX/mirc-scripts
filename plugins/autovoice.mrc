@@ -187,7 +187,7 @@ alias Autovoice::oninput {
 
   ; ------------------------ ;
 
-  var %is_activated_for_this_chan = $readini(%database_file, %database, %chan)
+  var %is_activated_for_this_chan = $readini(%database_file, n, %database, %chan)
   if ($me ishop %chan || $me isop %chan) {
     if (!autovoice on == %text && %is_activated_for_this_chan !== 1) {
       $Autovoice.on(%chan)
@@ -226,7 +226,7 @@ alias Autovoice::ontext {
 
   ; -------------------------------------- ;
 
-  var %is_activated_for_this_chan = $readini(%database_file, %database, %chan)
+  var %is_activated_for_this_chan = $readini(%database_file, n, %database, %chan)
   if (%nick isop %chan) {
     if (%text == !autovoice on && !%is_activated_for_this_chan) {
       $Autovoice.on(%chan)
@@ -249,7 +249,7 @@ alias Autovoice::ontext {
     return $false
   }
 
-  var %nick_info = $readini(%database_file, %database, %database_key)
+  var %nick_info = $readini(%database_file, n, %database, %database_key)
   if (%nick_info) {
     var %messages_total = $token(%nick_info, 1, 44)
     var %last_message = $token(%nick_info, 2, 44)
@@ -286,7 +286,7 @@ alias Autovoice::check.activities {
   var %u = 1
   while (%u <= %items_total) {
     var %database_key = $ini(%database_file, %database, %u)
-    var %database_value = $readini(%database_file, %database, %database_key)
+    var %database_value = $readini(%database_file, n, %database, %database_key)
 
     ; -------------------------------------------------------------------- ;
 

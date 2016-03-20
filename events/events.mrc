@@ -22,7 +22,7 @@
 * 
 * @var array 44 Toutes les configurations. (key=value)
 */
-alias -l EventFormat._configDefault {
+alias -l EventFormat._defaultConfig {
   var %event = $event
   var %format = [prefix_sign] [event][suffix_sign] [nick] ([address])
   var %switches = $null
@@ -64,32 +64,44 @@ alias EventFormat {
   ; Configuration de l'événement.  
   var %config = $iif(%config_name, $call.alias($v1), $call.alias(EventFormat.config::on $+ $event)) $result
   ; Configuration par défaut (au cas où celle de l'événement n'existe pas)
-  %config = $EventFormat._config(%config) 
+  %config = $EventFormat.config(%config) 
 
   var %nick = $iif($newnick, $v1, $nick)
   var %chan = $chan
-  var %color = $Configure::read(%config, color)
-  var %switches = $Configure::read(%config, switches)
+  var %color = $Configure::read(%config, color, ->).value
+  var %switches = $Configure::read(%config, switches, ->).value
 
   ; event has one chan
   if (%chan) {
     if (s isin %switches) {
-      echo %color %switches %chan $EventFormat._change(%nick, %chan, %config)
+      echo %color %switches $EventFormat._change(%nick, %chan, %config)
     }
 
-    echo %color $remove(%switches, e, s, t) # $EventFormat._change(%nick, %chan, %config)
+    %switches = $remove(%switches, e, s, t)
+    if ($len(%switches) === 1) {
+      %switches = $null
+    }
+
+    echo %color %switches # $EventFormat._change(%nick, %chan, %config)
   }
   ; event has many chans
   else {
     if (s isin %switches) {
-      echo %color %switches %chan $EventFormat._change(%nick, $chan(1), %config)
+      echo %color %switches $EventFormat._change(%nick, $chan(1), %config)
     }
 
     var %chans_total = $comchan(%nick, 0)
     var %i = 1
     while (%i <= %chans_total) {
       %chan = $comchan(%nick, %i)
-      echo %color $remove(%switches, e, s, t) %chan $EventFormat._change(%nick, %chan, %config)
+
+      %switches = $remove(%switches, e, s, t)
+      if ($len(%switches) === 1) {
+        %switches = $null
+      }
+
+      echo %color %switches %chan $EventFormat._change(%nick, %chan, %config)
+
       inc %i
     }
   }
@@ -101,17 +113,17 @@ alias EventFormat {
 * @param  array $1-=%config Les configurations à ajouter à la configuration par défaut.
 * @return array 44
 */
-alias -l EventFormat._config {
-  return $iif($1-, $+($v1, $chr(44))) $+ $EventFormat._configDefault
+alias -l EventFormat.config {
+  return $iif($1-, $+($v1, $chr(44))) $+ $EventFormat._defaultConfig
 }
 
 /**
 * Construction de la sortie
 *
-* @param  string $$1=%nick   Le pseudo qui a déclenché l'événement.
-* @param  string $$2=%chan   Sur quel salon l'événement doit être affiché.
+* @param  string $$1=%nick Le pseudo qui a déclenché l'événement.
+* @param  string $$2=%chan Sur quel salon l'événement doit être affiché.
 * @param  string $$3=%config Toutes les configurations.
-* @return string             Le format modifié avec les bonnes valeurs.
+* @return string Le format modifié avec les bonnes valeurs.
 */
 alias -l EventFormat._change {
   var %nick = $$1
@@ -120,10 +132,10 @@ alias -l EventFormat._change {
 
   ; ------------- ;
 
-  var %output = $Configure::read(%config, format)
+  var %output = $Configure::read(%config, format, ->).value
   %output = $replace(%output, [address], $EventFormat.info().address)
   %output = $replace(%output, [event], $EventFormat.info().event)
-  if ($Configure::read(%config, detection)) {
+  if ($Configure::check(%config, detection, ->)) {
     %output = $replace(%output, [message], $EventFormat.info().message&detection)
   }
   else {
@@ -132,13 +144,13 @@ alias -l EventFormat._change {
   %output = $replace(%output, [nick], $EventFormat.info(%nick, %chan).nick)
   %output = $replace(%output, [newnick], $EventFormat.info(%nick, %chan).newnick)
   %output = $replace(%output, [oldnick], $EventFormat.info($nick, %chan).oldnick)
-  %output = $replace(%output, [prefix_sign], $Configure::read(%config, prefix_sign))
+  %output = $replace(%output, [prefix_sign], $Configure::read(%config, prefix_sign, ->).value)
   %output = $replace(%output, [mode], $EventFormat.info().mode)
-  %output = $replace(%output, [suffix_sign], $Configure::read(%config, suffix_sign))
+  %output = $replace(%output, [suffix_sign], $Configure::read(%config, suffix_sign, ->).value)
 
-  var %before_timestamp = $Configure::read(%config, before_timestamp)
+  var %before_timestamp = $Configure::read(%config, before_timestamp, ->).value
   %before_timestamp = $replace(%before_timestamp, [external], $EventFormat.info(%nick, %chan).external)
-  if ($Configure::read(%config, detection)) {
+  if ($Configure::read(%config, detection, ->).value === $true) {
     %before_timestamp = [detection] %before_timestamp
   }
   %before_timestamp = $replace(%before_timestamp, [detection], $EventFormat.info().detection)
@@ -266,7 +278,7 @@ on ^&*:RAWMODE:#: {
     %calc = $calc($ticks - %timeonjoin)
   }
 
-  if (%calc >= 300) { $EventFormat }
+  if (%calc >= 600) { $EventFormat }
   else { haltdef }
 }
 

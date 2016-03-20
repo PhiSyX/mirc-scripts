@@ -1,70 +1,54 @@
 /**
-* Configure
-*   SCRIPT A AMÉLIORER.
+* Script Configure.mrc
 *
 * @author Mike 'PhiSyX' S.
+* @version 1.0.2
+* 
+* @identifier boolean $Configure::check(array %config, string %key, string %direction = ->)
 *
-* @property boolean $Configure::check(array %config, string %key, string %direction = =*)
-* @property string|$null $Configure::read(array %config, string %key, string %direction = =*)
-* @property boolean $Configure::checkByIndex(array %config, string %key, string %direction = =*)
-* @property string|$null $Configure::readByIndex(array %config, string %key, string %direction = =*)
-* @property string $Configure::assign(string %key, string %value)
+* @identifier string|null $Configure::read(array %config, string %key, string %direction = ->)
+*   - Retourne la valeur entière de la clé trouvé.
+*   - @property string $prop=`key` Retourne la clé de la clé trouvé.
+*   - @property string $prop=`value` Retourne la valeur de la clé trouvé.
 */
 
 /**
-* {inherit doc}
-* Alias de Configure::read
+* Utilisé pour lire les informations de configurations.
 *
-* @param  array   $$1=%config   Le tableau de configuration.
-* @param  string  $$2=%key      La clé à rechercher.
-* @param  string  $3=%direction =*|*=|both
-* @return boolean               $true en cas de succès, $false sinon.
-*/
-alias Configure::check {
-  if (!$isid) {
-    return $false
-  }
-
-  return $iif($Configure::read($$1, $$2, $3) !== $null, $true, $false)
-}
-
-/**
-* Utilisé pour lire les informations de configurations. (sous forme key=value,key2=value2)
-*
-* @param  array  $$1=%config   Le tableau de configuration.
-* @param  string $$2=%key      La clé à rechercher.
-* @param  string $3=%direction =*|*=|both
-* @return string|$null         La bonne valeur, $null sinon.
+* @param array $$1=%config La configuration.
+* @param string|int $$2=%key La clé/valeur à chercher.
+* @param string $3=%direction La direction.
+*   - index: :key@*
+*   - <- : *=:key
+*   - -> : :key=*
+*   - <-> : :key=*, *=:key
+* @properties string $prop=`key` Retourne la clé de la clé trouvé.
+* @properties string $prop=`value` Retourne la valeur de la clé trouvé.
+* @return string|null Retourne la valeur entière, $null sinon.
 */
 alias Configure::read {
   if (!$isid) {
     return $false
   }
 
-  ; ---------------------------------- ;
+  ; -------------------- ;
 
   var %config = $$1
   var %key = $$2
-  var %direction = $iif(!$3, $false, $3)
+  var %direction = $iif($3, $v1)
 
-  ; ---------------------------------- ;
+  ; -------------------- ;
 
   var %name
   var %result
 
-  ; ?@*=* | .both
-  if ($chr(64) isincs %key || $prop === both) {
-    %name = %key
-  }
-  ; =*
-  elseif (!%direction || %direction === $+($chr(61),$chr(42))) {
+  if (%direction === ->) {
     %name = $+(%key, $chr(61), *)
   }
-  ; *=
-  elseif (%direction === $+($chr(42),$chr(61))) {
+  elseif (%direction === <-) {
     %name = $+(*, $chr(61), %key)
   }
-  elseif (%direction == both) {
+  elseif (%direction === <->) {
     %name = $+(%key, $chr(61), *)
     %result = $wildtok(%config, %name, 1, 44)
     if (!%result) {
@@ -72,83 +56,62 @@ alias Configure::read {
       %result = $wildtok(%config, %name, 1, 44)
     }
   }
-
-  %result = $wildtok(%config, %name, 1, 44)
-
-  if ($prop === both || $prop === key) {
-    if ($prop === key) {
-      return $token(%result, 1, 61)
-    }
-    return %result
+  elseif (%direction === index) {
+    %name = $+(%key, $chr(64), *)
+  }
+  else {
+    %name = %key
   }
 
-  return $iif($token(%result, 2, 61), $replace($v1, $chr(59), $chr(44)))
-}
-
-/**
-* {inherit doc}
-* Alias de Configure::readByIndex
-*
-* @param  array   $$1=%config   Le tableau de configuration.
-* @param  string  $$2=%key      La clé à rechercher.
-* @param  string  $3=%direction =*|*=|both
-* @return boolean               $true en cas de succès, $false sinon.
-*/
-alias Configure::checkByIndex {
-  if (!$isid) {
-    return $false
+  if (!%result) {
+    %result = $wildtok(%config, %name, 1, 44)
   }
-
-  ; ----------- ;
-
-  return $iif($Configure::readByIndex($$1, $$2, $3) !== $null, $true, $false)
-}
-
-/**
-* Utilisé pour lire les informations de configuration ayant des index. (forme index@key=value)
-*
-* @param  array  $$1=%config   Le tableau de configuration.
-* @param  int    $$2=%index    L'index à rechercher.
-* @param  string $3=%direction =*|*=|both
-* @return string|$null         La bonne valeur, $null sinon.
-*/
-alias Configure::readByIndex {
-  if (!$isid) {
-    return $false
-  }
-
-  ; ------------------------------------- ;
-
-  var %config = $1
-  var %index = $iif($2 isnum, $+($2, @, *))
-
-  ; ------------------------------------- ;
-
-  var %result = $Configure::read(%config, %index, $3).both
 
   if ($prop === key) {
-    return $token(%result, 2, 64)
+    return $replace($token(%result, 1, 61), $chr(59), $chr(44))
   }
   elseif ($prop === value) {
-    return $token(%result, 2, 61)
+    return $replace($token(%result, 2, 61), $chr(59), $chr(44))
   }
 
-  return %result
+  return $replace(%result, $chr(59), $chr(44))
+}
+
+/**
+* Alias de Configure::read
+*
+* @param array $$1=%config La configuration.
+* @param string|int $$2=%key La clé/valeur à chercher.
+* @param string $3=%direction La direction.
+*   - index: :key@*
+*   - <- : *=:key
+*   - -> : :key=*
+*   - <-> : :key=*, *=:key
+* @return boolean
+*/
+alias Configure::check {
+  if (!$isid) {
+    return $false
+  }
+
+  ; -------------------- ;
+
+  return $iif($Configure::read($$1, $$2, $3) !== $null, $true, $false)
 }
 
 /**
 * Assigne à une clé, une valeur.
 *
-* @param  string $$1=%key   Clé
-* @param  string $$2=%value Valeur
-* @return string            key=value
+* @param string $$1=%key La clé
+* @param string $$2=%value Valeur à associer à la clé.
+* @return string key=value
 */
 alias Configure::assign {
   if (!$isid) {
     return $false
   }
 
-  ; ----------- ;
+  ; -------------------- ;
 
   return $+($1, $chr(61), $2, $iif($prop !== last, $chr(44)))
 }

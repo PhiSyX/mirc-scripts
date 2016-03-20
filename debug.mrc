@@ -2,59 +2,66 @@
 * Debug Mode.
 *
 * @author Mike 'PhiSyX' S.
-*
+* @version 1.1.0
+* @require
+*   - scripts/users/phisyx/bases.mrc
+*   - scripts/users/phisyx/configure.mrc
 * @commands
 *   - /debugmode --help [command | mode | option]
 *   - /debugmode --version
 *   - /debugmode on|off [option]
 *   - (TODO) /debugmode update
-* @require
-*   - scripts/users/phisyx/bases.mrc
-*   - scripts/users/phisyx/configure.mrc
-* @version 1.0.9
 */
-; ///////////////
-; // VARIABLES //
-; ///////////////
-alias -l debugmode._configDefault {
-  return identifier=debugmode.console
+; -- [ Configurations ] --------------------
+/**
+* Les configurations par défaut.
+*   - `identifier` : L'identifieur/L'alias à utiliser pour la commande /debug.
+* @var array 44 : key=value
+*/
+alias -l debugmode._defaultConfig {
+  return identifier=debugmode.console 
 }
+/**
+* Configuration à utiliser.
+* @return array
+*/
 alias -l debugmode.config {
-  return $iif($1, $+($v1, $chr(44))) $+ $debugmode._configDefault
+  return $iif($1, $+($v1, $chr(44))) $+ $debugmode._defaultConfig
 }
 
+; -- [ Variables ] --------------------
 /**
-* Les commandes
+* Les commandes.
 * @var array 44
 */
 alias -l debugmode.commands {
   return update
 }
-
 /**
-* Les modes
+* Les modes.
 * @var array 44
 */
 alias -l debugmode.modes {
   return off,on
 }
-
 /**
-* Les options
+* Les options.
 * @var array 44 : key=value
 */
 alias -l debugmode.options {
   return -h=--help,-q=--quiet,-v=--version
 }
 
-; ///////////////
-; // Debugmode //
-; ///////////////
+; -- [ Debug mode ] --------------------
+/**
+* @param string $1=%arg1 Commande, mode ou option.
+* @param string $2=%arg2 Paramètres supplémentaires.
+*/
 alias debugmode {
   var %arg1 = $1
   var %arg2 = $2
 
-  ; ---------- ;
+  ; -------------------- ;
 
   var %name_alias
   if (!%arg1) {
@@ -82,7 +89,6 @@ alias debugmode {
     echo $color(text) -a $chr(45)
   }
 }
-
 /**
 * Vérifie si le mode débug est activé ou non.
 *
@@ -91,62 +97,141 @@ alias debugmode {
 alias debugmode.is_active {
   return $iif($debug, $true, $false)
 }
-
-; //////////////////////////////
-; // Alias liés aux commandes //
-; //////////////////////////////
 /**
+* @param  string  $$1=%name Nom de la variable à tester
+* @return boolean
+*
+* @property string $prop=command
+* @property string $prop=mode
+* @property string $prop=option
+*/
+alias -l debugmode.is {
+  var %name = $$1
+
+  ; -------------------- ;
+
+  var %config
+  if ($prop === command) {
+    %config = $Configure::check($debugmode.commands, %name)
+  }
+  elseif ($prop === mode) {
+    %config = $Configure::check($debugmode.modes, %name)
+  }
+  elseif ($prop === option) {
+    %config = $Configure::check($debugmode.options, %name, <->)
+  }
+
+  return %config
+}
+/**
+* Affiche les valeurs d'un tableau.
+*
+* @param  array  $1=%array
+* @param  string $2=%format
+* @return void
+*/
+alias -l debugmode::array_values::toString {
+  var %array = $1
+  var %format = $2
+
+  ; -------------------- ;
+
+  var %i = 1
+  var %total_items = $token(%array, 0, 44)
+  while (%i <= %total_items) {
+    var %item = $iif($token($token(%array, %i, 44), 2, 61), $v1, $token(%array, %i, 44))
+    var %name_alias
+    var %item_help
+
+    if ($debugmode.is(%item).command) {
+      %name_alias = debugmode.command:: $+ %item $+ &help
+      %item_help = $call.alias(%name_alias).result
+    }
+    elseif ($debugmode.is(%item).mode) {
+      %name_alias = debugmode.mode:: $+ %item $+ &help
+      %item_help = $call.alias(%name_alias).result
+    }
+    elseif ($debugmode.is(%item).option) {
+      %name_alias = debugmode.option:: $+ $debugmode.option::name(%item) $+ &help
+      %item_help = $call.alias(%name_alias).result
+    }
+
+    var %item_list = $replace($token(%array, %i, 44), $chr(61), $+($chr(44), $chr(32)))
+    var %item_text = $replace(%format, [value].replace, %item_list, [value], %item)
+
+    echo $color(notice) -a %item_text $iif(%item_help, $+(:, $chr(32), $v1))
+    inc %i
+  }
+}
+/**
+* Vérifie qu'une valeur corresponde à une option et qu'elle est égale au
+*   résultat attendu.
+*
+* @example $1 = --quiet
+* @example $debugmode::assertEquals(--help, $1) Retourne $false
+*
+* @param  string  $$1 La valeur qu'on attend
+* @param  string  $2  La valeur à testé
+* @return boolean
+*/
+alias debugmode::assertEquals {
+  var %attempt = $debugmode.option::name($$1)
+  var %test = $iif($2, $debugmode.option::name($2), $false)
+
+  ; -------------------- ;
+
+  return $iif(%test && (%attempt === %test), $true, $false)
+}
+/**
+* Récupère le nom de l'option (complet ou court).
+*
+* @param  string $$1=%option Nom de l'option.
+* @return string
+*/
+alias -l debugmode.option::name {
+  var %option = $$1
+
+  ; -------------------- ;
+
+  var %config = $debugmode.options
+
+  if ($prop === short) {
+    return $remove($Configure::read(%config, %option, <->).key, $chr(45))
+  }
+
+  return $remove($Configure::read(%config, %option, <->).value, $chr(45))
+}
+
+; -- [ Commandes ] --------------------
+/**
+* TODO: Met à jour ce script.
+*
 * @command /debugmode update
 */
 alias debugmode.command::update {}
-alias debugmode.command::update&help {
-  var %help = 04Permet de mettre à jour le script $qt(debug.mrc)  (à faire)
 
-  if ($1 === single) {
-    echo $color(notice) -a Aide /debugmode update $chr(91) 14option $chr(93)
-    echo $color(notice) -a %help
-  }
-
-  return $lower(%help)
-}
-
-; //////////////////////////
-; // Alias liés aux modes //
-; //////////////////////////
+; -- [ Modes ] --------------------
 /**
 * Activation du mode débug.
 *
 * @command /debugmode on [option]
-* @param  string $1=%option
-* @return void
+* @param string $1=%option
 */
 alias debugmode.mode::on {
   var %option = $1
 
-  ; ------------ ;
+  ; -------------------- ;
 
   var %window = $+(@, $server, :, $me)
 
   .enable #debugmode
   .window -enmk0 %window
-  .debug -ip 14 %window $Configure::read($debugmode.config, identifier)
+  .debug -ip 14 %window $Configure::read($debugmode.config, identifier, ->).value
 
   if (!$debugmode::assertEquals(--quiet, %option)) {
     echo $color(info) -ae Mode débug: activé
     echo $color(info) $debug Mode débug: activé
   }
-}
-alias debugmode.mode::on&help {
-  var %help = Permet d'activer le mode débug.
-
-  if ($1 === single) {
-    echo $color(notice) -ae %help
-    echo $color(notice) -a Usage: /debugmode on $chr(91) 14option $chr(93)
-    echo $color(notice) -a Options:
-    echo $color(notice) -a -> 14-q, 14--quiet : $debugmode.option::quiet&help
-  }
-
-  return $lower(%help)
 }
 
 /**
@@ -154,12 +239,11 @@ alias debugmode.mode::on&help {
 *
 * @command /debugmode off [option]
 * @param  string $1=%option
-* @return void
 */
 alias debugmode.mode::off {
   var %option = $1
 
-  ; ------------ ;
+  ; -------------------- ;
 
   .disable #debugmode
   .close -@ $debug
@@ -168,33 +252,18 @@ alias debugmode.mode::off {
     echo $color(info) -ae Mode débug: désactivé
   }
 }
-alias debugmode.mode::off&help {
-  var %help = Permet de désactiver le mode débug.
 
-  if ($1 === single) {
-    echo $color(notice) -ae %help
-    echo $color(notice) -a Usage: /debugmode off $chr(91) 14option $chr(93)
-    echo $color(notice) -a Options:
-    echo $color(notice) -a -> 14-q, 14--quiet : $debugmode.option::quiet&help
-  }
-
-  return $lower(%help)
-}
-
-; ////////////////////////////
-; // Alias liés aux options //
-; ////////////////////////////
+; -- [ Options ] --------------------
 /**
 * Affiche de l'aide concernant toutes les commandes (ou une seule commande).
 *
 * @command /debugmode --help [name]
 * @param  string $1=%name
-* @return void
 */
 alias debugmode.option::help {
   var %name = $1
 
-  ; ---------- ;
+  ; -------------------- ;
 
   var %format
 
@@ -233,6 +302,53 @@ alias debugmode.option::help {
 
   echo $color(text) -a -
 }
+/**
+* @command /debugmode --version
+*/
+alias debugmode.option::version {
+  echo $color(notice) -a Version du script $qt(debugmode.mrc) : v $+ $remove($read($scriptdir $+ debug.mrc, n, 14), * @version)
+}
+
+; -- [ Aides ] --------------------
+; --- [ Aides commandes ] ---------
+alias debugmode.command::update&help {
+  var %help = 04Permet de mettre à jour le script $qt(debug.mrc)  (à faire)
+
+  if ($1 === single) {
+    echo $color(notice) -a Aide /debugmode update $chr(91) 14option $chr(93)
+    echo $color(notice) -a %help
+  }
+
+  return $lower(%help)
+}
+
+; --- [ Aides modes ] -------------
+alias debugmode.mode::on&help {
+  var %help = Permet d'activer le mode débug.
+
+  if ($1 === single) {
+    echo $color(notice) -ae %help
+    echo $color(notice) -a Usage: /debugmode on $chr(91) 14option $chr(93)
+    echo $color(notice) -a Options:
+    echo $color(notice) -a -> 14-q, 14--quiet : $debugmode.option::quiet&help
+  }
+
+  return $lower(%help)
+}
+alias debugmode.mode::off&help {
+  var %help = Permet de désactiver le mode débug.
+
+  if ($1 === single) {
+    echo $color(notice) -ae %help
+    echo $color(notice) -a Usage: /debugmode off $chr(91) 14option $chr(93)
+    echo $color(notice) -a Options:
+    echo $color(notice) -a -> 14-q, 14--quiet : $debugmode.option::quiet&help
+  }
+
+  return $lower(%help)
+}
+
+; --- [ Aides options ] ---------
 alias debugmode.option::help&help {
   var %help = Affiche de l'aide.
 
@@ -261,15 +377,6 @@ alias debugmode.option::quiet&help {
 
   return $lower(%help)
 }
-
-/**
-* @command /debugmode --version
-*/
-alias debugmode.option::version {}
-
-/**
-* @command /debugmode --help --version
-*/
 alias debugmode.option::version&help {
   var %help = Affiche la version du script $qt(debug.mrc) $+ .
 
@@ -282,124 +389,13 @@ alias debugmode.option::version&help {
   return $lower(%help)
 }
 
-; //////////////////
-; // Alias privés //
-; //////////////////
-/**
-* @param  string  $$1=%name Nom de la variable à tester
-* @return boolean
-*
-* @property string $prop=command
-* @property string $prop=mode
-* @property string $prop=option
-*/
-alias -l debugmode.is {
-  var %name = $$1
-
-  ; ----------- ;
-
-  var %config
-  if ($prop === command) {
-    %config = $Configure::read($debugmode.commands, %name).both
-  }
-  elseif ($prop === mode) {
-    %config = $Configure::read($debugmode.modes, %name).both
-  }
-  elseif ($prop === option) {
-    %config = $Configure::read($debugmode.options, %name, both)
-  }
-
-  return $iif(%config, $true, $false)
-}
-
-/**
-* Affiche les valeurs d'un tableau.
-*
-* @param  array  $1=%array
-* @param  string $2=%format
-* @return void
-*/
-alias -l debugmode::array_values::toString {
-  var %array = $1
-  var %format = $2
-
-  ; ------------ ;
-
-  var %i = 1
-  var %total_items = $token(%array, 0, 44)
-  while (%i <= %total_items) {
-    var %item = $iif($token($token(%array, %i, 44), 2, 61), $v1, $token(%array, %i, 44))
-    var %name_alias
-    var %item_help
-
-    if ($debugmode.is(%item).command) {
-      %name_alias = debugmode.command:: $+ %item $+ &help
-      %item_help = $call.alias(%name_alias).result
-    }
-    elseif ($debugmode.is(%item).mode) {
-      %name_alias = debugmode.mode:: $+ %item $+ &help
-      %item_help = $call.alias(%name_alias).result
-    }
-    elseif ($debugmode.is(%item).option) {
-      %name_alias = debugmode.option:: $+ $debugmode.option::name(%item) $+ &help
-      %item_help = $call.alias(%name_alias).result
-    }
-
-    var %item_list = $replace($token(%array, %i, 44), $chr(61), $+($chr(44), $chr(32)))
-    var %item_text = $replace(%format, [value].replace, %item_list, [value], %item)
-
-    echo $color(notice) -a %item_text $iif(%item_help, $+(:, $chr(32), $v1))
-    inc %i
-  }
-}
-
-/**
-* Vérifie qu'une valeur corresponde à une option et qu'elle est égale au
-*   résultat attendu.
-*
-* @example $1 = --quiet
-* @example $debugmode::assertEquals(--help, $1) Retourne $false
-*
-* @param  string  $$1 La valeur qu'on attend
-* @param  string  $2  La valeur à testé
-* @return boolean
-*/
-alias debugmode::assertEquals {
-  var %attempt = $debugmode.option::name($$1)
-  var %test = $iif($2, $debugmode.option::name($2), $false)
-
-  ; ----------------------------------------------------- ;
-
-  return $iif(%test && (%attempt === %test), $true, $false)
-}
-
-/**
-* Récupère le nom de l'option (complet ou court).
-*
-* @param  string $$1=%option Nom de l'option.
-* @return string
-*/
-alias -l debugmode.option::name {
-  var %option = $$1
-
-  ; ------------- ;
-
-  var %config = $debugmode.options
-
-  if ($prop === short) {
-    return $remove($Configure::read(%config, %option, both).key, $chr(45))
-  }
-
-  return $remove($Configure::read(%config, %option, both), $chr(45))
-}
-
-; ////////////////
-; // Evénements //
-; ////////////////
+; -- [ Événements ] --------------------
 #debugmode on
 on &*:connect:debugmode on --quiet
 
-; Ne pas mettre l'alias en privé.
+/**
+* ref config: `identifier`.
+*/
 alias debugmode.console {
   tokenize 32 $1-
 
@@ -466,12 +462,10 @@ alias -l debugmode.managment {
   }
 }
 
-; ///////////////////////////////
-; // Alias liés aux événements //
-; ///////////////////////////////
 alias -l debugmode.timers {
   $call.alias(Autovoice::check.activities)
 }
+
 alias -l debugmode.event.text {
   tokenize 32 $1-
 
@@ -480,7 +474,6 @@ alias -l debugmode.event.text {
   }
   elseif ($prop === user) {
     $call.alias(Autovoice::ontext, $2, $4, $5-)
-    $call.alias(Detections, $2-)
   }
   else {
   }
@@ -492,7 +485,6 @@ alias -l debugmode.event.join {
   if ($prop === me) {
   }
   elseif ($prop === user) {
-    $call.alias(Detections, $2-)
   }
   else {
   }
@@ -526,7 +518,6 @@ alias -l debugmode.event.notice {
   if ($prop === me) {
   }
   elseif ($prop === user) {
-    $call.alias(Detections, $2-)
   }
   else {
   }
@@ -560,6 +551,7 @@ alias -l debugmode.event.all {
   if ($prop === me) {
   }
   elseif ($prop === user) {
+    $call.alias(Detections, $2-)
   }
   else {
   }

@@ -58,16 +58,16 @@ alias -l whois.channel {
 
   ; Pour les salons officiels. (Skyrock.fm)
   if ($is_chanoff(%chan_without_usermodes)) {
-    %color = $Configure::read(%config, is_chanoff)
+    %color = $Configure::read(%config, is_chanoff, ->).value
     if ($chr(64) isin %chan_usermodes_only) {
-      %color = $Configure::read(%config, is_chanoff_op)
+      %color = $Configure::read(%config, is_chanoff_op, ->).value
     }
   }
-  elseif ($is_hq(%chan_without_usermodes) || $isin_chanlist(%chan_without_usermodes, $Configure::read(%config, chanoff&perso))) {
-    %color = $Configure::read(%config, is_chanoff&perso)
+  elseif ($is_hq(%chan_without_usermodes) || $isin_chanlist(%chan_without_usermodes, $Configure::read(%config, chanoff&perso, ->).value)) {
+    %color = $Configure::read(%config, is_chanoff&perso, ->).value
   }
   elseif ($regex(%chan_without_usermodes, / $+ $whois.channel.get().prefixes $+ /)) {
-    %color = $Configure::read(%config, is_prefixed)
+    %color = $Configure::read(%config, is_prefixed, ->).value
   }
 
   if ($len(%color) === 1) {
@@ -122,10 +122,10 @@ alias -l whois.channel.get {
   %usermodes = $iif($regex(usermodes, %chan, /( $+ %pattern $+ )/), $regml(usermodes, 1), $null)
 
   if ($prop === favorites) {
-    return $Configure::read(%config, favorites)
+    return $Configure::read(%config, favorites, ->).value
   }
   elseif ($prop === prefixes) {
-    var %prefixes = $Configure::read(%config, prefixes)
+    var %prefixes = $Configure::read(%config, prefixes, ->).value
     var %pattern = $replace(%prefixes, $chr(44), $chr(124), $chr(45), $+($chr(92),$chr(45)))
     return %pattern
   }
