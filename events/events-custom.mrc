@@ -3,9 +3,8 @@
 * @author Mike 'PhiSyX' S.
 */
 
-; //////////
-; // JOIN //
-; //////////
+; -- [ Configurations ] ----------------
+; --- [ JOIN ] -------------------------
 /**
 * Cet alias n'est pas obligatoire.
 *
@@ -15,7 +14,6 @@
 alias EventFormat.config::onjoin {
   return $Configure::assign(prefix_sign, «).last
 }
-
 /**
 * Pour les opérateurs
 *
@@ -29,9 +27,7 @@ alias EventFormat.config::onjoin&is_operator {
     $Configure::assign(prefix_sign, «).last
 }
 
-; //////////
-; // NICK //
-; //////////
+; --- [ NICK ] -------------------------
 /**
 * Cet alias n'est pas obligatoire.
 *
@@ -51,13 +47,11 @@ alias EventFormat.config::onnick {
     $Configure::assign(format, %format).last
 }
 
-; //////////
-; // PART //
-; //////////
+; --- [ PART ] -------------------------
 /**
 * Cet alias n'est pas obligatoire.
 *
-* Configuration spécifique à l'événement PART. 
+* Configuration spécifique à l'événement PART.
 * @var array 44 key=value
 */
 alias EventFormat.config::onpart {
@@ -65,13 +59,11 @@ alias EventFormat.config::onpart {
     $Configure::assign(format, [prefix_sign] [event][suffix_sign] [nick] ([address]) [message]).last
 }
 
-; //////////
-; // QUIT //
-; //////////
+; --- [ QUIT ] -------------------------
 /**
 * Cet alias n'est pas obligatoire.
 *
-* Configuration spécifique à l'événement QUIT. 
+* Configuration spécifique à l'événement QUIT.
 * @var array 44 key=value
 */
 alias EventFormat.config::onquit {
@@ -79,9 +71,7 @@ alias EventFormat.config::onquit {
     $Configure::assign(format, [prefix_sign] [event][suffix_sign] [nick] ([address]) [message]).last
 }
 
-; /////////////
-; // RAWMODE //
-; /////////////
+; --- [ RAWMODE ] -------------------------
 /**
 * Cet alias n'est pas obligatoire.
 *
@@ -93,9 +83,7 @@ alias EventFormat.config::onrawmode {
     $Configure::assign(format, [prefix_sign] [[event]] [nick] a appliqué le mode [mode]).last
 }
 
-; //////////
-; // TEXT //
-; //////////
+; --- [ TEXT ] -------------------------
 /**
 * Cet alias n'est pas obligatoire.
 *

@@ -96,11 +96,11 @@ alias Detections {
     return $false
   }
 
-  var %window = $+($debug, [detections])
-  $iif(!$window(%window), .window -nmk0 %window))
+  var %window = $iif($debug, $+($debug, [detections]))
+  $iif(%window && !$window(%window), .window -nmk0 %window))
 
   if ($server === tmi.twitch.tv) {
-    %config = $replace($1, $chr(59), $chr(44))
+    var %config = $replace($1, $chr(59), $chr(44))
     if ($left(%config,1) != $chr(58)) {
       %nick = $Configure::read(%config, display-name, ->).value
       %event = $3
@@ -159,7 +159,7 @@ alias Detections {
 /**
 * @param string $$1=%pattern Toutes les règles.
 * @param string $2=%sanctions Les sanctions.
-* @return string 
+* @return string
 */
 alias -l Detections::Regex.regexify {
   var %pattern = $$1

@@ -1,14 +1,6 @@
 /**
 * Amélioration des événements.
 *
-*   Liste des événements disponibles et fonctionnels:
-*     - join
-*     - nick
-*     - part
-*     - quit
-*     - rawmode
-*     - text
-*
 * @author Mike 'PhiSyX' S.
 * @require
 *   - scripts/users/phisyx/bases.mrc
@@ -19,7 +11,7 @@
 
 /**
 * Configuration par défaut.
-* 
+*
 * @var array 44 Toutes les configurations. (key=value)
 */
 alias -l EventFormat._defaultConfig {
@@ -49,22 +41,24 @@ alias -l EventFormat._defaultConfig {
 /**
 * [event.format description]
 *
-* @param  string $1=%configname Nom de la configuration à lire.
-* @return string                Le format avec les bonnes informations.
+* @param  string $1=%config_name Nom de la configuration à lire.
+* @return string Le format avec les bonnes informations.
 */
 alias EventFormat {
-  haltdef
+  $iif(!$isid, return $false)
 
-  ; ----------------- ;
+  ; -------------------- ;
 
   var %config_name = $1
 
-  ; ----------------- ;
+  ; -------------------- ;
 
-  ; Configuration de l'événement.  
+  haltdef
+
+  ; Configuration de l'événement.
   var %config = $iif(%config_name, $call.alias($v1), $call.alias(EventFormat.config::on $+ $event)) $result
   ; Configuration par défaut (au cas où celle de l'événement n'existe pas)
-  %config = $EventFormat.config(%config) 
+  %config = $EventFormat.config(%config)
 
   var %nick = $iif($newnick, $v1, $nick)
   var %chan = $chan
@@ -109,7 +103,7 @@ alias EventFormat {
 
 /**
 * Retourne la configuration
-* 
+*
 * @param  array $1-=%config Les configurations à ajouter à la configuration par défaut.
 * @return array 44
 */
@@ -130,7 +124,7 @@ alias -l EventFormat._change {
   var %chan = $$2
   var %config = $$3
 
-  ; ------------- ;
+  ; -------------------- ;
 
   var %output = $Configure::read(%config, format, ->).value
   %output = $replace(%output, [address], $EventFormat.info().address)
@@ -162,10 +156,14 @@ alias -l EventFormat._change {
 * @return string
 */
 alias EventFormat.info {
+  $iif(!$isid, return $false)
+
+  ; -------------------- ;
+
   var %nick = $1
   var %chan = $2
 
-  ; ---------- ;
+  ; -------------------- ;
 
   tokenize 32 $rawmsg
 
@@ -228,11 +226,8 @@ alias -l EventFormat.setJoin {
   .timerUnset 1 5 unset %event.*
 }
 
-; ////////////////
-; // Evenements //
-; ////////////////
-; //   JOIN     //
-; ////////////////
+; -- [ Evenements ] --------------------
+; --- [ JOIN ] -------------------------
 on ^&*:JOIN:#:{
   if ($nick === $me) {
     haltdef
@@ -252,25 +247,13 @@ on ^&*:JOIN:#:{
     }
   }
 }
-
-; ////////////////
-; //   NICK     //
-; ////////////////
+; --- [ NICK ] -------------------------
 on ^&*:NICK:$EventFormat
-
-; ////////////////
-; //   PART     //
-; ////////////////
-on ^&*:PART:#:if ($nick !== $me) { $EventFormat }
-
-; ////////////////
-; //   QUIT     //
-; ////////////////
+; --- [ PART ] -------------------------
+on ^&*:PART:#:$iif($nick !== $me, $EventFormat)
+; --- [ QUIT ] -------------------------
 on ^&*:QUIT:$EventFormat
-
-; ////////////////
-; //   RAWMODE  //
-; ////////////////
+; --- [ RAWMODE ] ----------------------
 on ^&*:RAWMODE:#: {
   var %timeonjoin = %event. [ $+ [ $chan ] $+ . [ $+ [ $lower($2) ] ] ]
   var %calc = $calc($ticks)
@@ -281,8 +264,5 @@ on ^&*:RAWMODE:#: {
   if (%calc >= 600) { $EventFormat }
   else { haltdef }
 }
-
-; ////////////////
-; //   TEXT     //
-; ////////////////
+; --- [ TEXT ] -------------------------
 on ^&*:TEXT:*:#:$EventFormat

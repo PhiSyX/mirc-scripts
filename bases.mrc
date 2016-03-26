@@ -81,4 +81,4 @@ alias call.alias {
 *
 * Sur certains IRCd le chantype peut être modifié, ou avoir plusieurs chantypes. ($chantypes)
 */
-alias ischan return $iif($left($$1,1) isin $chantypes,$true,$false)
+alias ischan return $iif($left($$1, 1) isin $chantypes, $true, $false)

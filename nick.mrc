@@ -72,8 +72,14 @@ alias -l nick.color._defaultConfig {
 * @property string $prop=custom Plus de couleurs.
 */
 alias nick.color {
+  $iif(!$isid, return $false)
+
+  ; -------------------- ;
+
   var %nick = $$1
   var %chan = $iif($2, $v1, $active)
+
+  ; -------------------- ;
 
   if (!$ischan(%chan)) {
     echo $color(info2) -a -
@@ -250,10 +256,7 @@ alias -l nick.get {
 * @return boolean Retourne $true en cas de trouvaille.
 */
 alias is_operator_off {
-  if (!$isid) {
-    return $false
-  }
-
+  $iif(!$isid, return $false)
   var %group = $nick.operator($$1).group
   return $iif(%group isnum && %group !== 1, $Configure::check($nick.groups, %group, index), $false)
 }
@@ -266,6 +269,10 @@ alias -l nick.groups {
   return 1@User,3@Test=*,4@PréAdd=',5@Add,6@IRCLite=°,6.5@Developer=°,7@IRCop=°
 }
 alias nick.operator {
+  $iif(!$isid, return $false)
+
+  ; -------------------- ;
+
   var %nick = $$1
 
   ; -------------------- ;
@@ -293,9 +300,7 @@ alias nick.operator {
 * @property string $prop=color Retourne le signe du groupe de l'opérateur mais avec sa couleur.
 */
 alias nick.operator.sign {
-  if (!$isid) {
-    return $false
-  }
+  $iif(!$isid, return $false)
 
   ; -------------------- ;
 
@@ -333,12 +338,7 @@ alias nick.operator.sign {
 * @return string Parrain de l'opérateur.
 */
 alias nick.operator.sponsor {
-  if (!$isid) {
-    return $false
-  }
-
-  ; -------------------- ;
-
+  $iif(!$isid, return $false)
   if ($is_operator_off($$1)) {
     return $nick.operator($$1).sponsored_by
   }
@@ -351,12 +351,7 @@ alias nick.operator.sponsor {
 * @return boolean
 */
 alias nick.is_skyrock_vhost {
-  if (!$isid) {
-    return $false
-  }
-
-  ; -------------------- ;
-
+  $iif(!$isid, return $false)
   var %addr = $address($$1,4)
   return $iif(*@*.skyrock.net* iswm %addr || *@*.orbus.fr iswm %addr, $true, $false)
 }

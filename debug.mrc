@@ -19,7 +19,7 @@
 * @var array 44 : key=value
 */
 alias -l debugmode._defaultConfig {
-  return identifier=debugmode.console 
+  return identifier=debugmode.console
 }
 /**
 * Configuration à utiliser.
@@ -58,6 +58,10 @@ alias -l debugmode.options {
 * @param string $2=%arg2 Paramètres supplémentaires.
 */
 alias debugmode {
+  $iif($isid, return $null)
+
+  ; -------------------- ;
+
   var %arg1 = $1
   var %arg2 = $2
 
@@ -170,11 +174,11 @@ alias -l debugmode::array_values::toString {
 * @example $1 = --quiet
 * @example $debugmode::assertEquals(--help, $1) Retourne $false
 *
-* @param  string  $$1 La valeur qu'on attend
-* @param  string  $2  La valeur à testé
+* @param  string $$1 La valeur qu'on attend
+* @param  string $2 La valeur à testé
 * @return boolean
 */
-alias debugmode::assertEquals {
+alias -l debugmode::assertEquals {
   var %attempt = $debugmode.option::name($$1)
   var %test = $iif($2, $debugmode.option::name($2), $false)
 
@@ -218,6 +222,10 @@ alias debugmode.command::update {}
 * @param string $1=%option
 */
 alias debugmode.mode::on {
+  $iif($isid, return $null)
+
+  ; -------------------- ;
+
   var %option = $1
 
   ; -------------------- ;
@@ -241,6 +249,10 @@ alias debugmode.mode::on {
 * @param  string $1=%option
 */
 alias debugmode.mode::off {
+  $iif($isid, return $null)
+
+  ; -------------------- ;
+
   var %option = $1
 
   ; -------------------- ;
@@ -261,6 +273,10 @@ alias debugmode.mode::off {
 * @param  string $1=%name
 */
 alias debugmode.option::help {
+  $iif($isid, return $null)
+
+  ; -------------------- ;
+
   var %name = $1
 
   ; -------------------- ;
@@ -306,12 +322,20 @@ alias debugmode.option::help {
 * @command /debugmode --version
 */
 alias debugmode.option::version {
+  $iif($isid, return $null)
+
+  ; -------------------- ;
+
   echo $color(notice) -a Version du script $qt(debugmode.mrc) : v $+ $remove($read($scriptdir $+ debug.mrc, n, 14), * @version)
 }
 
 ; -- [ Aides ] --------------------
 ; --- [ Aides commandes ] ---------
 alias debugmode.command::update&help {
+  $iif($isid, return $null)
+
+  ; -------------------- ;
+
   var %help = 04Permet de mettre à jour le script $qt(debug.mrc)  (à faire)
 
   if ($1 === single) {
@@ -324,6 +348,10 @@ alias debugmode.command::update&help {
 
 ; --- [ Aides modes ] -------------
 alias debugmode.mode::on&help {
+  $iif($isid, return $null)
+
+  ; -------------------- ;
+
   var %help = Permet d'activer le mode débug.
 
   if ($1 === single) {
@@ -336,6 +364,10 @@ alias debugmode.mode::on&help {
   return $lower(%help)
 }
 alias debugmode.mode::off&help {
+  $iif($isid, return $null)
+
+  ; -------------------- ;
+
   var %help = Permet de désactiver le mode débug.
 
   if ($1 === single) {
@@ -350,6 +382,10 @@ alias debugmode.mode::off&help {
 
 ; --- [ Aides options ] ---------
 alias debugmode.option::help&help {
+  $iif($isid, return $null)
+
+  ; -------------------- ;
+
   var %help = Affiche de l'aide.
 
   if ($1 === single) {
@@ -360,6 +396,10 @@ alias debugmode.option::help&help {
   return $lower(%help)
 }
 alias debugmode.option::quiet&help {
+  $iif($isid, return $null)
+
+  ; -------------------- ;
+
   var %help = Permet de désactiver les messages du mode débug.
 
   if ($1 === single) {

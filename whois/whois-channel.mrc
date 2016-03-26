@@ -23,9 +23,9 @@ raw 319:*: {
 */
 alias -l whois.chanlist {
   var %chanlist = $right($token($rawmsg, 5-, 32), -1)
-  var %chanlist_temp
   var %channels_total = $numtok(%chanlist, 32)
 
+  var %chanlist_temp
   var %i = 1
   while (%i <= %channels_total) {
     %chanlist_temp = $addtok(%chanlist_temp, $whois.channel($gettok(%chanlist, %i, 32)), 32)
@@ -119,7 +119,7 @@ alias -l whois.channel.get {
   %usermodes = $replace(%usermodes, $chr(43), $+($chr(92), $chr(43)))
 
   var %pattern = $+($chr(40), ?:, %usermodes, $chr(41), $chr(43))
-  %usermodes = $iif($regex(usermodes, %chan, /( $+ %pattern $+ )/), $regml(usermodes, 1), $null)
+  %usermodes = $iif($regex(usermodes, %chan, /(\!? $+ %pattern $+ )/), $regml(usermodes, 1), $null)
 
   if ($prop === favorites) {
     return $Configure::read(%config, favorites, ->).value
@@ -135,6 +135,8 @@ alias -l whois.channel.get {
     %usermodes = $replace(%usermodes, $chr(64), $+(04, $chr(64), ))
     %usermodes = $replace(%usermodes, $chr(37), $+(10, $chr(37), ))
     %usermodes = $replace(%usermodes, $chr(43), $+(07, $chr(43), ))
+    %usermodes = $replace(%usermodes, $chr(33), $+(05, $chr(33), ))
+
     return %usermodes
   }
   elseif ($prop === without_usermodes) {

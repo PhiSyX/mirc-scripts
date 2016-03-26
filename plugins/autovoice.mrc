@@ -3,10 +3,7 @@
 *
 * Auto Voice Intelligent.
 */
-
-; ///////////////
-; // VARIABLES //
-; ///////////////
+; -- [ Variables ] --------------------
 /**
 * En combien de temps doit-on dévoicer un utilisateur voicé par ce script.
 * En millisecondes! Sachant que la vérification se fait toutes les 1 minute
@@ -72,26 +69,21 @@ alias -l Autovoice._db.file {
   return scripts\users\phisyx\database.ini
 }
 
-; ///////////////
-; // AUTOVOICE //
-; ///////////////
+; -- [ Autovoice ] --------------------
 /**
 * Active l'autovoice.
 *
-* @param  string $$1=%chan
-* @return void
+* @param string $$1=%chan
 */
 alias -l Autovoice.on {
   var %chan = $$1
 
-  ; ----- ;
+  ; -------------------- ;
 
   var %database = $Autovoice._db
   var %database_file = $Autovoice._db.file
   var %database_key = %chan
   var %database_value = 1
-
-  ; ----- ;
 
   .writeini %database_file %database %database_key %database_value
 
@@ -101,18 +93,16 @@ alias -l Autovoice.on {
 /**
 * Désactive l'autovoice
 *
-* @return void
+* @param string $$1=%chan Salon.
 */
 alias -l Autovoice.off {
   var %chan = $$1
 
-  ; ----- ;
+  ; -------------------- ;
 
   var %database = $Autovoice._db
   var %database_file = $Autovoice._db.file
   var %database_key = %chan
-
-  ; ----- ;
 
   .remini %database_file %database %database_key
 
@@ -123,28 +113,22 @@ alias -l Autovoice.off {
 
 /**
 * Dévoice toutes les personnes qui ont été voicé par ce système.
-* @param  string $$1=%chan Salon.
-* @return void
+*
+* @param string $$1=%chan Salon.
 */
 alias -l Autovoice.devoice_all {
   var %chan = $$1
 
-  ; ----- ;
+  ; -------------------- ;
 
   var %database = $Autovoice._db
   var %database_file = $Autovoice._db.file
-
-  ; ----- ;
-
   var %nicks, %v
 
   var %items_total = $ini(%database_file, %database, 0)
   var %u = 1
   while (%u <= %items_total) {
     var %database_key = $ini(%database_file, %database, %u)
-
-    ; ----- ;
-
     var %nick = $token(%database_key, 2, 64)
     if (%chan isin %database_key) {
       %v = %v $+ v
@@ -161,31 +145,27 @@ alias -l Autovoice.devoice_all {
   }
 }
 
-; ////////////////
-; // EVENEMENTS //
-; ////////////////
+; -- [ Evenements ] -------------------- ;
 /**
 * ON INPUT #.
 *
 * @param string $$1=%chan Salon
-* @param string $$2=text  Texte
+* @param string $$2=text Texte
 */
 alias Autovoice::oninput {
   var %chan = $$1
   var %text = $right($$2-, -1)
 
-  ; ------------------------ ;
+  ; -------------------- ;
 
   if (!$ischan(%chan)) {
     return $false
   }
 
-  ; ------------------------ ;
+  ; -------------------- ;
 
   var %database = $Autovoice._db
   var %database_file = $Autovoice._db.file
-
-  ; ------------------------ ;
 
   var %is_activated_for_this_chan = $readini(%database_file, n, %database, %chan)
   if ($me ishop %chan || $me isop %chan) {
@@ -211,20 +191,18 @@ alias Autovoice::ontext {
   var %chan = $$2
   var %text = $right($$3-, -1)
 
-  ; -------------------------------------- ;
+  ; -------------------- ;
 
   if (!$ischan(%chan)) {
     return $false
   }
 
-  ; -------------------------------------- ;
+  ; -------------------- ;
 
   var %database = $Autovoice._db
   var %database_file = $Autovoice._db.file
   var %database_key = $+(%chan, @, %nick)
   var %database_value = $+(1, $chr(44), $ticks)
-
-  ; -------------------------------------- ;
 
   var %is_activated_for_this_chan = $readini(%database_file, n, %database, %chan)
   if (%nick isop %chan) {
@@ -280,20 +258,14 @@ alias Autovoice::check.activities {
   var %database = $Autovoice._db
   var %database_file = $Autovoice._db.file
 
-  ; ------------------------------------ ;
-
   var %items_total = $ini(%database_file, %database, 0)
   var %u = 1
   while (%u <= %items_total) {
     var %database_key = $ini(%database_file, %database, %u)
     var %database_value = $readini(%database_file, n, %database, %database_key)
 
-    ; -------------------------------------------------------------------- ;
-
     var %chan = $token(%database_key, 1, 64)
     var %nick = $token(%database_key, 2, 64)
-
-    ; -------------------------------------------------------------------- ;
 
     if (%nick) {
       var %ticks = $token(%database_value, 2, 44)

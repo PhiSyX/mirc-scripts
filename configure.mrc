@@ -3,7 +3,7 @@
 *
 * @author Mike 'PhiSyX' S.
 * @version 1.0.2
-* 
+*
 * @identifier boolean $Configure::check(array %config, string %key, string %direction = ->)
 *
 * @identifier string|null $Configure::read(array %config, string %key, string %direction = ->)
@@ -27,9 +27,7 @@
 * @return string|null Retourne la valeur entière, $null sinon.
 */
 alias Configure::read {
-  if (!$isid) {
-    return $false
-  }
+  $iif(!$isid, return $false)
 
   ; -------------------- ;
 
@@ -39,8 +37,18 @@ alias Configure::read {
 
   ; -------------------- ;
 
+  var %directions = <-,->,<->,index
   var %name
   var %result
+
+  if (%direction && !$istok(%directions,%direction,44)) {
+    echo $color(text) -a $chr(45)
+    echo $color(info2) -a Erreur: La direction $qt(%direction) n'existe pas.
+    echo $color(info2) -a Les directions possibles: $qt(%directions) (séparées par des virgules)
+    echo $color(text) -a $chr(45)
+
+    return $false
+  }
 
   if (%direction === ->) {
     %name = $+(%key, $chr(61), *)
@@ -90,12 +98,7 @@ alias Configure::read {
 * @return boolean
 */
 alias Configure::check {
-  if (!$isid) {
-    return $false
-  }
-
-  ; -------------------- ;
-
+  $iif(!$isid, return $false)
   return $iif($Configure::read($$1, $$2, $3) !== $null, $true, $false)
 }
 
@@ -107,11 +110,6 @@ alias Configure::check {
 * @return string key=value
 */
 alias Configure::assign {
-  if (!$isid) {
-    return $false
-  }
-
-  ; -------------------- ;
-
+  $iif(!$isid, return $false)
   return $+($1, $chr(61), $2, $iif($prop !== last, $chr(44)))
 }
