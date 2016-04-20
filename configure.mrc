@@ -34,12 +34,13 @@ alias Configure::read {
   var %config = $$1
   var %key = $$2
   var %direction = $iif($3, $v1)
+  var %default = $iif($4, $v1, $null)
 
   ; -------------------- ;
 
   var %directions = <-,->,<->,index
   var %name
-  var %result
+  var %result, %return
 
   if (%direction && !$istok(%directions,%direction,44)) {
     echo $color(text) -a $chr(45)
@@ -76,13 +77,16 @@ alias Configure::read {
   }
 
   if ($prop === key) {
-    return $replace($token(%result, 1, 61), $chr(59), $chr(44))
+    %return = $replace($token(%result, 1, 61), $chr(59), $chr(44))
   }
   elseif ($prop === value) {
-    return $replace($token(%result, 2, 61), $chr(59), $chr(44))
+    %return = $replace($token(%result, 2, 61), $chr(59), $chr(44))
+  }
+  else {
+    %return = $replace(%result, $chr(59), $chr(44))
   }
 
-  return $replace(%result, $chr(59), $chr(44))
+  return $iif(%return, %return, %default)
 }
 
 /**

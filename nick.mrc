@@ -123,31 +123,31 @@ alias nick.color {
 
       ; COULEURS:
       ;   First
-      var %nfc = $iif($Configure::read(%config, first, ->).value, $v1, %nick_color)
+      var %nfc = $Configure::read(%config, first, ->, %nick_color).value
       ;   Between
-      var %nbc = $iif($Configure::read(%config, between, ->).value, $v1, %nick_color)
+      var %nbc = $Configure::read(%config, between, ->, %nick_color).value
       ;   Last
-      var %nlc = $iif($Configure::read(%config, last, ->).value, $v1, %nick_color)
+      var %nlc = $Configure::read(%config, last, ->, %nick_color).value
       ;   Status
-      var %nsc = $iif($Configure::read(%config, status, ->).value, $v1, %nick_color)
+      var %nsc = $Configure::read(%config, status, ->, %nick_color).value
 
       if (%nick_status_only) {
-        %nbc = $iif($Configure::read(%config, if_status__between, ->).value, $v1, %nbc)
-        %nfc = $iif($Configure::read(%config, if_status__first, ->).value, $v1, %nfc)
-        %nlc = $iif($Configure::read(%config, if_status__last, ->).value, $v1, %nlc)
-        %nsc = $iif($Configure::read(%config, if_status__status, ->).value, $v1, %nsc)
+        %nbc = $Configure::read(%config, if_status__between, ->, %nbc).value
+        %nfc = $Configure::read(%config, if_status__first, ->, %nfc).value
+        %nlc = $Configure::read(%config, if_status__last, ->, %nlc).value
+        %nsc = $Configure::read(%config, if_status__status, ->, %nsc).value
       }
 
       if ($is_botoff(%nick)) {
-        %nbc = $iif($Configure::read(%config, botoff__between, ->).value, $v1, %nbc)
-        %nfc = $iif($Configure::read(%config, botoff__first, ->).value, $v1, %nfc)
-        %nlc = $iif($Configure::read(%config, botoff__last, ->).value, $v1, %nlc)
+        %nbc = $Configure::read(%config, botoff__between, ->, %nbc).value
+        %nfc = $Configure::read(%config, botoff__first, ->, %nfc).value
+        %nlc = $Configure::read(%config, botoff__last, ->, %nlc).value
       }
       elseif ($nick.is_skyrock_vhost(%nick)) {
-        %nbc = $iif($Configure::read(%config, skyrock_vhost__between, ->).value, $v1, %nbc)
-        %nfc = $iif($Configure::read(%config, skyrock_vhost__first, ->).value, $v1, %nfc)
-        %nlc = $iif($Configure::read(%config, skyrock_vhost__last, ->).value, $v1, %nlc)
-        %nsc = $iif($Configure::read(%config, skyrock_vhost__status, ->).value, $v1, %nsc)
+        %nbc = $Configure::read(%config, skyrock_vhost__between, ->, %nbc).value
+        %nfc = $Configure::read(%config, skyrock_vhost__first, ->, %nfc).value
+        %nlc = $Configure::read(%config, skyrock_vhost__last, ->, %nlc).value
+        %nsc = $Configure::read(%config, skyrock_vhost__status, ->, %nsc).value
       }
 
       %nbc = $iif($len(%nbc) === 1, $+(0, %nbc), %nbc)
