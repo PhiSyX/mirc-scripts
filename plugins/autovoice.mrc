@@ -14,7 +14,7 @@
 * @var int
 */
 alias -l Autovoice.idle {
-  return 240000
+  return $Configure::read(autovoice.idle, 240000)
 }
 
 /**
@@ -50,7 +50,7 @@ alias -l Autovoice.idle {
 * @var int
 */
 alias -l Autovoice.idle.message {
-  return 15000
+  return $Configure::read(autovoice.idle_message, 15000)
 }
 
 /**

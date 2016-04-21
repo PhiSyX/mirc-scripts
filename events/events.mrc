@@ -6,7 +6,7 @@
 *   - scripts/users/phisyx/bases.mrc
 *   - scripts/users/phisyx/configure.mrc
 *   - scripts/users/phisyx/nick.mrc
-* @version 1.1.9
+* @version 1.2.0
 */
 
 /**
@@ -15,33 +15,72 @@
 * @var array 44 Toutes les configurations. (key=value)
 */
 alias -l EventFormat._defaultConfig {
-  var %event = $event
-  var %format = [prefix_sign] [event][suffix_sign] [nick] ([address])
-  var %switches = $null
+  var %config
 
+  var %event = $event
+  var %config_event = $+(event_, %event)
+
+  var %format = {{prefix_sign}} {{event}}{{suffix_sign}} {{nick}} ({{address}}) {{message}}
+  var %switches = $null
+  var %prefix_sign = $Configure::read(event.prefix_sign, $chr(42))
+  var %suffix_sign = $Configure::read(event.suffix_sign, $chr(58))
+
+  ; par défaut pour ces évenemens:
   if (%event === rawmode) {
     %event = mode
-    %format = [nick] sets mode: $token($rawmsg, 4-, 32)
+    %format = {{nick}} sets mode: {{modes}}
   }
   elseif (%event === nick) {
-    %format = [prefix_sign] [oldnick] is now known as [newnick]
+    %format = {{prefix_sign}} {{oldnick}} is now known as {{newnick}}
+    %switches = es
   }
   elseif (%event === text) {
-    %format = <[nick]> [message]
-    %switches = -m
+    %format = <{{nick}}> {{message}}
+    %switches = m
   }
 
-  return $Configure::assign(color, $iif($color(%event), $v1, 11)) $+ $&
-    $Configure::assign(prefix_sign, $chr(42)) $+ $&
-    $Configure::assign(suffix_sign, $chr(58)) $+ $&
-    $Configure::assign(format, %format) $+ $&
-    $Configure::assign(switches, %switches).last
+  ; Configurations de l'utilisateur (fichier config.ini)
+  %event = $Configure::read(%config_event $+ .name, %event)
+  %format = $Configure::read(%config_event $+ .format, %format)
+  %switches = $Configure::read(%config_event $+ .switches, %switches)
+  %switches = $remove(%switches, $chr(45))
+  %prefix_sign = $Configure::read(%config_event $+ .prefix_sign, %prefix_sign)
+  %suffix_sign = $Configure::read(%config_event $+ .suffix_sign, %suffix_sign)
+
+  if (%switches) {
+    %switches = $chr(45) $+ %switches
+  }
+
+  if (!$Configure::check(event_ $+ $event $+ .config)) {
+    %config = $Configure::assign(color, $iif($color(%event), $v1, 11)) $+ $&
+      $Configure::assign(prefix_sign, %prefix_sign) $+ $&
+      $Configure::assign(suffix_sign, %suffix_sign) $+ $&
+      $Configure::assign(format, %format) $+ $&
+      $Configure::assign(switches, %switches).last
+
+    $Configure::write(event_ $+ $event $+ .config, %config)
+  }
+  else {
+    %config = $Configure::read(event_ $+ $event $+ .config)
+  }
+
+  return %config
+}
+
+/**
+* Retourne la configuration
+*
+* @param array $1-=%config Les configurations à ajouter à la configuration par défaut.
+* @return array 44
+*/
+alias -l EventFormat.config {
+  return $iif($1-, $+($v1, $chr(44))) $+ $EventFormat._defaultConfig
 }
 
 /**
 * [event.format description]
 *
-* @param  string $1=%config_name Nom de la configuration à lire.
+* @param string $1=%config_name Nom de la configuration à lire.
 * @return string Le format avec les bonnes informations.
 */
 alias EventFormat {
@@ -62,8 +101,8 @@ alias EventFormat {
 
   var %nick = $iif($newnick, $v1, $nick)
   var %chan = $chan
-  var %color = $Configure::read(%config, color, ->).value
-  var %switches = $Configure::read(%config, switches, ->).value
+  var %color = $Configure::read.inline(color, %config)
+  var %switches = $Configure::read.inline(switches, %config)
 
   ; event has one chan
   if (%chan) {
@@ -75,48 +114,39 @@ alias EventFormat {
     if ($len(%switches) === 1) {
       %switches = $null
     }
-
     echo %color %switches # $EventFormat._change(%nick, %chan, %config)
   }
   ; event has many chans
   else {
     if (s isin %switches) {
-      echo %color %switches $EventFormat._change(%nick, $chan(1), %config)
+      if ($event === nick && $nick !== $me) {
+      }
+      else {
+        echo %color %switches $EventFormat._change(%nick, $chan(1), %config)
+      }
+    }
+
+    %switches = $remove(%switches, e, s, t)
+    if ($len(%switches) === 1) {
+      %switches = $null
     }
 
     var %chans_total = $comchan(%nick, 0)
     var %i = 1
     while (%i <= %chans_total) {
       %chan = $comchan(%nick, %i)
-
-      %switches = $remove(%switches, e, s, t)
-      if ($len(%switches) === 1) {
-        %switches = $null
-      }
-
       echo %color %switches %chan $EventFormat._change(%nick, %chan, %config)
-
       inc %i
     }
   }
 }
 
 /**
-* Retourne la configuration
-*
-* @param  array $1-=%config Les configurations à ajouter à la configuration par défaut.
-* @return array 44
-*/
-alias -l EventFormat.config {
-  return $iif($1-, $+($v1, $chr(44))) $+ $EventFormat._defaultConfig
-}
-
-/**
 * Construction de la sortie
 *
-* @param  string $$1=%nick Le pseudo qui a déclenché l'événement.
-* @param  string $$2=%chan Sur quel salon l'événement doit être affiché.
-* @param  string $$3=%config Toutes les configurations.
+* @param string $$1=%nick Le pseudo qui a déclenché l'événement.
+* @param string $$2=%chan Sur quel salon l'événement doit être affiché.
+* @param string $$3=%config Toutes les configurations.
 * @return string Le format modifié avec les bonnes valeurs.
 */
 alias -l EventFormat._change {
@@ -126,30 +156,40 @@ alias -l EventFormat._change {
 
   ; -------------------- ;
 
-  var %output = $Configure::read(%config, format, ->).value
-  %output = $replace(%output, [address], $EventFormat.info().address)
-  %output = $replace(%output, [event], $EventFormat.info().event)
-  if ($Configure::check(%config, detection, ->)) {
-    %output = $replace(%output, [message], $EventFormat.info().message&detection)
+  var %output = $Configure::read.inline(format, %config)
+  %output = $replace(%output, {{address}}, $EventFormat.info().address)
+  %output = $replace(%output, {{event}}, $EventFormat.info().event)
+  if ($Configure::read(detection)) {
+    %output = $replace(%output, {{message}}, $EventFormat.info().message&detection)
   }
   else {
-    %output = $replace(%output, [message], $EventFormat.info().message)
+    %output = $replace(%output, {{message}}, $EventFormat.info().message)
   }
-  %output = $replace(%output, [nick], $EventFormat.info(%nick, %chan).nick)
-  %output = $replace(%output, [newnick], $EventFormat.info(%nick, %chan).newnick)
-  %output = $replace(%output, [oldnick], $EventFormat.info($nick, %chan).oldnick)
-  %output = $replace(%output, [prefix_sign], $Configure::read(%config, prefix_sign, ->).value)
-  %output = $replace(%output, [mode], $EventFormat.info().mode)
-  %output = $replace(%output, [suffix_sign], $Configure::read(%config, suffix_sign, ->).value)
+  %output = $replace(%output, {{nick}}, $EventFormat.info(%nick, %chan).nick)
+  %output = $replace(%output, {{newnick}}, $EventFormat.info(%nick, %chan).newnick)
+  %output = $replace(%output, {{oldnick}}, $EventFormat.info($nick, %chan).oldnick)
 
-  var %before_timestamp = $Configure::read(%config, before_timestamp, ->).value
-  %before_timestamp = $replace(%before_timestamp, [external], $EventFormat.info(%nick, %chan).external)
-  if ($Configure::read(%config, detection, ->).value === $true) {
-    %before_timestamp = [detection] %before_timestamp
+  if (%nick !== $me) {
+    %output = $replace(%output, {{prefix_sign}}, $Configure::read.inline(prefix_sign, %config))
   }
-  %before_timestamp = $replace(%before_timestamp, [detection], $EventFormat.info().detection)
+  else {
+    %output = $replace(%output, {{prefix_sign}}, $Configure::read.inline(prefix_sign_me, %config, »))
+  }
 
-  return %before_timestamp $timestamp %output
+  %output = $replace(%output, {{modes}}, $EventFormat.info().modes)
+  %output = $replace(%output, {{modes:custom}}, $EventFormat.info().modes&custom)
+  %output = $replace(%output, {{suffix_sign}}, $Configure::read.inline(suffix_sign, %config))
+
+  %output = {{external}} {{timestamp}} %output
+  if ($Configure::read(detection)) {
+    %output = {{detection}} %output
+  }
+
+  %output = $replace(%output, {{external}}, $EventFormat.info(%nick, %chan).external)
+  %output = $replace(%output, {{timestamp}}, $timestamp)
+  %output = $replace(%output, {{detection}}, $EventFormat.info().detection)
+
+  return %output
 }
 
 /**
@@ -185,7 +225,7 @@ alias EventFormat.info {
     var %external = $null
 
     if (n !isincs $chan(%chan).mode && !$nick(%chan, %nick)) {
-      %external = 04(External Message $+ $iif($chan(%chan).mode, $+(/ modes:, $v1)) $+ )
+      %external = 04(External Message $+ $iif($chan(%chan).mode, $+(/modes:, $v1)) $+ )
     }
 
     return %external
@@ -214,17 +254,17 @@ alias EventFormat.info {
     var %currentChan = $iif(%chan, $v1, $right($3, -1))
     return $nick.color(%currentNick, %currentChan).custom
   }
-  elseif ($prop === mode) {
+  elseif ($prop === modes) {
+    var %modes_with_params = $4-
+    return %modes_with_params
+  }
+  elseif ($prop === modes&custom) {
     var %modes = $+(14, $4, )
     var %params = $+(14, $5-, )
     return $qt(%modes) $iif($5-, avec les paramètres $qt(%params))
   }
 }
 
-alias -l EventFormat.setJoin {
-  %event. [ $+ [ $chan ] $+ . [ $+ [ $lower($nick) ] ] ] = $ticks
-  .timerUnset 1 5 unset %event.*
-}
 
 ; -- [ Evenements ] --------------------
 ; --- [ JOIN ] -------------------------
@@ -246,6 +286,10 @@ on ^&*:JOIN:#:{
       $EventFormat.setJoin
     }
   }
+}
+alias -l EventFormat.setJoin {
+  %event. [ $+ [ $chan ] $+ . [ $+ [ $lower($nick) ] ] ] = $ticks
+  .timerUnset 1 5 unset %event.*
 }
 ; --- [ NICK ] -------------------------
 on ^&*:NICK:$EventFormat

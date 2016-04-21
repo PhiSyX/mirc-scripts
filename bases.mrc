@@ -18,14 +18,11 @@ on &*:CONNECT:{
   if (ircd??.skyrock.net iswm $server) {
     ; Récupère les membres de l'équipe (SKYROCK.COM) Chat.
     get_team
-
-    ; AutoJOIN
-    j %MyFavoritesChannels
   }
   ; A la connexion au serveur de test.
   elseif (irc.local.dev === $server && $nick === %handle) {
-    .timerServiceNSIdentification 1 1 ns id %key.local_dev.ns
-    .timerOperIdentification 1 2 oper %key.local_dev.opuser %key.local_dev.oppwd
+    .timerServiceNSIdentification 1 1 ns id $Configure::read(local_dev.ns_pass)
+    .timerOperIdentification 1 2 oper $Configure::read(local_dev.oper_user) $Configure::read(local_dev.oper_pass)
     .timerServiceOSSetSuperAdmin 1 2 os set superadmin on
 
     ; .timerServiceCSInvite 1 2 cs invite #services $me
@@ -33,6 +30,14 @@ on &*:CONNECT:{
 
     ; Parce que c'est plus rapide.
     .timerSAJOINService 1 2 sajoin $me #services
+  }
+
+  ; AutoJOIN
+  if ($Configure::check(join_on_connect) && $Configure::read(join_on_connect)) {
+    var %network = $lower($replace($network, $chr(46), $chr(95)))
+    if ($Configure::check(%network $+ .join_on_connect)) {
+      j $Configure::read(%network $+ .join_on_connect)
+    }
   }
 }
 

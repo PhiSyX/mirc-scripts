@@ -1,10 +1,7 @@
 /**
-* Plugin pour le DébugMode: detections.
+* Plugin pour le DébugMode.
 *
-* @author Mike 'PhiSyX' S.
-* @version 1.0.2
-*
-* À améliorer.
+* Detections. (à améliorer)
 */
 ; -- [ Badwords ] --------------------
 ; ---- [ Insultes ] ------------------
@@ -99,10 +96,10 @@ alias Detections {
   var %window = $iif($debug, $+($debug, [detections]))
   $iif(%window && !$window(%window), .window -nmk0 %window))
 
-  if ($server === tmi.twitch.tv) {
+  if ($network == Twitch) {
     var %config = $replace($1, $chr(59), $chr(44))
     if ($left(%config,1) != $chr(58)) {
-      %nick = $Configure::read(%config, display-name, ->).value
+      %nick = $Configure::read.inline(display-name, %config)
       %event = $3
       %chan = $4
     }
@@ -168,16 +165,16 @@ alias -l Detections::Regex.regexify {
   ; -------------------- ;
 
   if (%sanctions) {
-    if ($Configure::check(%sanctions, [#k], ->)) {
-      %pattern = $replace(%pattern, [#k], $Configure::read(%sanctions, [#k], ->).value)
+    if ($Configure::check.inline([#k], %sanctions)) {
+      %pattern = $replace(%pattern, [#k], $Configure::read.inline([#k], %sanctions))
     }
 
-    if ($Configure::check(%sanctions, [#kb], ->)) {
-      %pattern = $replace(%pattern, [#kb], $Configure::read(%sanctions, [#kb], ->).value)
+    if ($Configure::check.inline([#kb], %sanctions)) {
+      %pattern = $replace(%pattern, [#kb], $Configure::read.inline([#kb], %sanctions))
     }
 
-    if ($Configure::check(%sanctions, [#rkb], ->)) {
-      %pattern = $replace(%pattern, [#rkb], $Configure::read(%sanctions, [#rkb], ->).value)
+    if ($Configure::check.inline([#rkb], %sanctions)) {
+      %pattern = $replace(%pattern, [#rkb], $Configure::read.inline([#rkb], %sanctions))
     }
   }
 

@@ -2,7 +2,7 @@
 * Debug Mode.
 *
 * @author Mike 'PhiSyX' S.
-* @version 1.1.0
+* @version 1.1.1
 * @require
 *   - scripts/users/phisyx/bases.mrc
 *   - scripts/users/phisyx/configure.mrc
@@ -82,7 +82,7 @@ alias debugmode {
     $call.alias(%name_alias, %arg2)
   }
   elseif ($debugmode.is(%arg1).option) {
-    %name_alias = debugmode.option:: $+ $debugmode.option::name(%arg1).long
+    %name_alias = debugmode.option:: $+ $debugmode.option::rename(%arg1).long
     $call.alias(%name_alias, %arg2)
   }
   else {
@@ -116,13 +116,13 @@ alias -l debugmode.is {
 
   var %config
   if ($prop === command) {
-    %config = $Configure::check($debugmode.commands, %name)
+    %config = $Configure::check.inline(%name, $debugmode.commands)
   }
   elseif ($prop === mode) {
-    %config = $Configure::check($debugmode.modes, %name)
+    %config = $Configure::check.inline(%name, $debugmode.modes)
   }
   elseif ($prop === option) {
-    %config = $Configure::check($debugmode.options, %name, <->)
+    %config = $Configure::check.inline(%name, $debugmode.options)
   }
 
   return %config
@@ -156,7 +156,7 @@ alias -l debugmode::array_values::toString {
       %item_help = $call.alias(%name_alias).result
     }
     elseif ($debugmode.is(%item).option) {
-      %name_alias = debugmode.option:: $+ $debugmode.option::name(%item) $+ &help
+      %name_alias = debugmode.option:: $+ $debugmode.option::rename(%item) $+ &help
       %item_help = $call.alias(%name_alias).result
     }
 
@@ -179,8 +179,8 @@ alias -l debugmode::array_values::toString {
 * @return boolean
 */
 alias -l debugmode::assertEquals {
-  var %attempt = $debugmode.option::name($$1)
-  var %test = $iif($2, $debugmode.option::name($2), $false)
+  var %attempt = $debugmode.option::rename($$1)
+  var %test = $iif($2, $debugmode.option::rename($2), $false)
 
   ; -------------------- ;
 
@@ -192,18 +192,16 @@ alias -l debugmode::assertEquals {
 * @param  string $$1=%option Nom de l'option.
 * @return string
 */
-alias -l debugmode.option::name {
+alias -l debugmode.option::rename {
   var %option = $$1
 
   ; -------------------- ;
 
-  var %config = $debugmode.options
-
   if ($prop === short) {
-    return $remove($Configure::read(%config, %option, <->).key, $chr(45))
+    return $remove($Configure::read.inline(%option, $debugmode.options).key, $chr(45))
   }
 
-  return $remove($Configure::read(%config, %option, <->).value, $chr(45))
+  return $remove($Configure::read.inline(%option, $debugmode.options), $chr(45))
 }
 
 ; -- [ Commandes ] --------------------
@@ -234,7 +232,7 @@ alias debugmode.mode::on {
 
   .enable #debugmode
   .window -enmk0 %window
-  .debug -ip 14 %window $Configure::read($debugmode.config, identifier, ->).value
+  .debug -ip 14 %window $Configure::read.inline(identifier, $debugmode.config)
 
   if (!$debugmode::assertEquals(--quiet, %option)) {
     echo $color(info) -ae Mode débug: activé
@@ -312,7 +310,7 @@ alias debugmode.option::help {
       $call.alias(debugmode.mode:: $+ %name $+ &help, single)
     }
     elseif ($debugmode.is(%name).option) {
-      $call.alias(debugmode.option:: $+ $debugmode.option::name(%name) $+ &help, single)
+      $call.alias(debugmode.option:: $+ $debugmode.option::rename(%name) $+ &help, single)
     }
   }
 

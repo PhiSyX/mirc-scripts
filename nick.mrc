@@ -6,7 +6,7 @@
 * Lesquel(le)s: %hq-chan, $is_botoff, $is_skynaute, $ison_hq, `skyteam` hash table.
 *
 * @author "Mike 'PhiSyX' S."
-* @version 1.1.4
+* @version 1.1.5
 * @require
 *   - Script mIRC Skyrock.fm v10
 *   - scripts/users/phisyx/configure.mrc
@@ -33,33 +33,6 @@
 * @identifier string $nick.operator.sponsor(string %pseudo)
 *   - default: Retourne le parrain d'un pseudo. (Opérateur)
 */
-
-; -- [ Variables ] --------------------
-/**
-* Configuration des couleurs.
-*
-* Liste des options de couleurs disponibles:
-*   - between
-*   - first
-*   - last
-*   - status
-*   - if_status__<between | first | last | status>
-*   - botoff__<between | first | last>
-*   - skyrock_vhost__<between | first | last | status>
-*
-* @var array 44 key=value
-*/
-alias -l nick.color._defaultConfig {
-  return $Configure::assign(first, 14) $+ $&
-    $Configure::assign(last, 14) $+ $&
-    $Configure::assign(nonworld, 14) $+ $&
-    $Configure::assign(botoff__between, 01) $+ $&
-    $Configure::assign(botoff__first, 14) $+ $&
-    $Configure::assign(botoff__last, 01) $+ $&
-    $Configure::assign(skyrock_vhost__between, 14) $+ $&
-    $Configure::assign(skyrock_vhost__first, 03) $+ $&
-    $Configure::assign(skyrock_vhost__last, 04).last
-}
 
 ; -- [ Nick color ] --------------------
 /**
@@ -93,8 +66,6 @@ alias nick.color {
     return $false
   }
 
-  var %config = $nick.color._defaultConfig
-
   var %nick_mode = $nick.get(%nick, %chan).chanusermode
   var %nick_color = $nick(%chan, %nick).color
   if ($len(%nick_color) === 1) {
@@ -113,7 +84,7 @@ alias nick.color {
   }
 
   ; MON STYLE
-  if ($prop === custom) {
+  if ($prop === custom && $Configure::read(nick.custom) === $true) {
     if (!$is_skynaute(%nick)) {
       var %nick_without_status = $nick.get(%nick).without_status
       var %nick_status_only = $nick.get(%nick).status_only
@@ -123,31 +94,31 @@ alias nick.color {
 
       ; COULEURS:
       ;   First
-      var %nfc = $Configure::read(%config, first, ->, %nick_color).value
+      var %nfc = $Configure::read(nick.first, %nick_color)
       ;   Between
-      var %nbc = $Configure::read(%config, between, ->, %nick_color).value
+      var %nbc = $Configure::read(nick.between, %nick_color)
       ;   Last
-      var %nlc = $Configure::read(%config, last, ->, %nick_color).value
+      var %nlc = $Configure::read(nick.last, %nick_color)
       ;   Status
-      var %nsc = $Configure::read(%config, status, ->, %nick_color).value
+      var %nsc = $Configure::read(nick.status, %nick_color)
 
       if (%nick_status_only) {
-        %nbc = $Configure::read(%config, if_status__between, ->, %nbc).value
-        %nfc = $Configure::read(%config, if_status__first, ->, %nfc).value
-        %nlc = $Configure::read(%config, if_status__last, ->, %nlc).value
-        %nsc = $Configure::read(%config, if_status__status, ->, %nsc).value
+        %nbc = $Configure::read(nick.if_status__between, %nbc)
+        %nfc = $Configure::read(nick.if_status__first, %nfc)
+        %nlc = $Configure::read(nick.if_status__last, %nlc)
+        %nsc = $Configure::read(nick.if_status__status, %nsc)
       }
 
       if ($is_botoff(%nick)) {
-        %nbc = $Configure::read(%config, botoff__between, ->, %nbc).value
-        %nfc = $Configure::read(%config, botoff__first, ->, %nfc).value
-        %nlc = $Configure::read(%config, botoff__last, ->, %nlc).value
+        %nbc = $Configure::read(nick.botoff__between, %nbc)
+        %nfc = $Configure::read(nick.botoff__first, %nfc)
+        %nlc = $Configure::read(nick.botoff__last, %nlc)
       }
       elseif ($nick.is_skyrock_vhost(%nick)) {
-        %nbc = $Configure::read(%config, skyrock_vhost__between, ->, %nbc).value
-        %nfc = $Configure::read(%config, skyrock_vhost__first, ->, %nfc).value
-        %nlc = $Configure::read(%config, skyrock_vhost__last, ->, %nlc).value
-        %nsc = $Configure::read(%config, skyrock_vhost__status, ->, %nsc).value
+        %nbc = $Configure::read(nick.skyrock_vhost__between, %nbc)
+        %nfc = $Configure::read(nick.skyrock_vhost__first, %nfc)
+        %nlc = $Configure::read(nick.skyrock_vhost__last, %nlc)
+        %nsc = $Configure::read(nick.skyrock_vhost__status, %nsc)
       }
 
       %nbc = $iif($len(%nbc) === 1, $+(0, %nbc), %nbc)
@@ -181,8 +152,8 @@ alias nick.color {
 /**
 * Retourne des informations concernant le pseudonyme.
 *
-* @param  string $$1=%nick Pseudo.
-* @param  string $2=%chan Salon.
+* @param string $$1=%nick Pseudo.
+* @param string $2=%chan Salon.
 * @return string|$null
 */
 alias -l nick.get {
@@ -258,9 +229,8 @@ alias -l nick.get {
 alias is_operator_off {
   $iif(!$isid, return $false)
   var %group = $nick.operator($$1).group
-  return $iif(%group isnum && %group !== 1, $Configure::check($nick.groups, %group, index), $false)
+  return $iif(%group isnum && %group !== 1, $Configure::check.inline(%group, $nick.groups), $false)
 }
-
 /**
 * Tableau contenant les noms de groupes d'opérateurs (+ user)
 * @var array 44 : index@key=value
@@ -314,8 +284,8 @@ alias nick.operator.sign {
 
   var %group_num = $nick.operator(%operator).group
 
-  var %group = $Configure::read($nick.groups, %group_num, index).key
-  var %sign = $Configure::read($nick.groups, %group_num, index).value
+  var %group = $Configure::read.inline(%group_num, $nick.groups).key
+  var %sign = $Configure::read.inline(%group_num, $nick.groups)
 
   if ($prop === color) {
     %sign = $replace(%sign, $chr(42), $+(07, $chr(42), ))
@@ -343,7 +313,6 @@ alias nick.operator.sponsor {
     return $nick.operator($$1).sponsored_by
   }
 }
-
 /**
 * Vérifie que le pseudo passé en paramètre s'agit d'une personne venant des locaux Skyrock.com
 *
