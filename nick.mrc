@@ -286,6 +286,7 @@ alias nick.operator.sign {
 
   var %group = $Configure::read.inline(%group_num, $nick.groups).key
   var %sign = $Configure::read.inline(%group_num, $nick.groups)
+  %sign = $replace(%sign, add, )
 
   if ($prop === color) {
     %sign = $replace(%sign, $chr(42), $+(07, $chr(42), ))

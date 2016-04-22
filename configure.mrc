@@ -6,7 +6,7 @@
 *
 * @identifier bool   `$Configure::check(string %path [ , string %default = $null ])`
 *   ```
-*   if ($Configure::check(debug)) 
+*   if ($Configure::check(debug))
 *     echo -a La configuration $qt(debug) existe.
 *   ```
 *
@@ -243,7 +243,7 @@ alias -l Configure::process {
           %data = $remove($gettok(%data, 1, 61), %path $+ @)
         }
         else {
-          %data = $gettok(%data, 2, 61)
+          %data = $iif($gettok(%data, 2, 61), $v1, $gettok(%data, 2, 64))
         }
       }
       ; by key=*
