@@ -186,7 +186,13 @@ alias -l EventFormat._change {
   }
 
   %output = $replace(%output, {{external}}, $EventFormat.info(%nick, %chan).external)
-  %output = $replace(%output, {{timestamp}}, $timestamp)
+  if ($Configure::check(event.timestamp_color)) {
+    %output = $replace(%output, {{timestamp}}, $+(,$Configure::read(event.timestamp_color),$timestamp,))
+  }
+  else {
+    %output = $replace(%output, {{timestamp}}, $timestamp)
+  }
+
   %output = $replace(%output, {{detection}}, $EventFormat.info().detection)
 
   return %output

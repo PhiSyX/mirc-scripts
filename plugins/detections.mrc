@@ -62,7 +62,7 @@ alias -l Detections::Sanctions.porn {
 alias -l Detections::Badwords.other {
   var %pattern = [a-z0-9]{5}\-[a-z0-9]{5}\-[a-z0-9]{5}\-[a-z0-9]{5}\-[a-z0-9]{5} $+ $&
     ,(?<![a-z])c+[o]+d+[e]+ $+ $&
-    ,(?:ftp|http)(?:s)?:\/\/ $+ $&
+    ,(?:[a-z]+)s?:\/\/[^\s]+ $+ $&
     ,j+[e]\s+v+[e]n+d+ $+ $&
     ,p+[a]y+p+[a]l+ $+ $&
     ,y+[o]u+p+[a]+s+s+
@@ -89,7 +89,7 @@ alias Detections {
 
   ; -------------------- ;
 
-  if (%nick === $server) {
+  if (%nick === $server || $right(%event, -1) === $server) {
     return $false
   }
 
